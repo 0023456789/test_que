@@ -1,0 +1,533 @@
+version: '3.9'
+
+x-common-env: &common-env
+  DJANGO_SETTINGS_MODULE: config.settings
+  PYTHONUNBUFFERED: "1"
+  RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+
+x-service-defaults: &service-defaults
+  restart: unless-stopped
+  networks:
+    - bookstore-net
+
+services:
+  # ─── Infrastructure ────────────────────────────────────────────────────────
+  rabbitmq:
+    image: rabbitmq:3.12-management
+    <<: *service-defaults
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    <<: *service-defaults
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── Databases ─────────────────────────────────────────────────────────────
+  db-auth:
+    image: postgres:15-alpine
+    <<: *service-defaults
+    environment:
+      POSTGRES_DB: auth_db
+      POSTGRES_USER: auth_user
+      POSTGRES_PASSWORD: auth_pass
+    volumes:
+      - db_auth:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U auth_user -d auth_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  db-customer:
+    image: postgres:15-alpine
+    <<: *service-defaults
+    environment:
+      POSTGRES_DB: customer_db
+      POSTGRES_USER: customer_user
+      POSTGRES_PASSWORD: customer_pass
+    volumes:
+      - db_customer:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U customer_user -d customer_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  db-staff:
+    image: postgres:15-alpine
+    <<: *service-defaults
+    environment:
+      POSTGRES_DB: staff_db
+      POSTGRES_USER: staff_user
+      POSTGRES_PASSWORD: staff_pass
+    volumes:
+      - db_staff:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U staff_user -d staff_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  db-manager:
+    image: postgres:15-alpine
+    <<: *service-defaults
+    environment:
+      POSTGRES_DB: manager_db
+      POSTGRES_USER: manager_user
+      POSTGRES_PASSWORD: manager_pass
+    volumes:
+      - db_manager:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U manager_user -d manager_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  db-catalog:
+    image: postgres:15-alpine
+    <<: *service-defaults
+    environment:
+      POSTGRES_DB: catalog_db
+      POSTGRES_USER: catalog_user
+      POSTGRES_PASSWORD: catalog_pass
+    volumes:
+      - db_catalog:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U catalog_user -d catalog_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  db-book:
+    image: postgres:15-alpine
+    <<: *service-defaults
+    environment:
+      POSTGRES_DB: book_db
+      POSTGRES_USER: book_user
+      POSTGRES_PASSWORD: book_pass
+    volumes:
+      - db_book:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U book_user -d book_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  db-cart:
+    image: postgres:15-alpine
+    <<: *service-defaults
+    environment:
+      POSTGRES_DB: cart_db
+      POSTGRES_USER: cart_user
+      POSTGRES_PASSWORD: cart_pass
+    volumes:
+      - db_cart:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cart_user -d cart_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  db-order:
+    image: postgres:15-alpine
+    <<: *service-defaults
+    environment:
+      POSTGRES_DB: order_db
+      POSTGRES_USER: order_user
+      POSTGRES_PASSWORD: order_pass
+    volumes:
+      - db_order:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U order_user -d order_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  db-ship:
+    image: postgres:15-alpine
+    <<: *service-defaults
+    environment:
+      POSTGRES_DB: ship_db
+      POSTGRES_USER: ship_user
+      POSTGRES_PASSWORD: ship_pass
+    volumes:
+      - db_ship:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ship_user -d ship_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  db-pay:
+    image: postgres:15-alpine
+    <<: *service-defaults
+    environment:
+      POSTGRES_DB: pay_db
+      POSTGRES_USER: pay_user
+      POSTGRES_PASSWORD: pay_pass
+    volumes:
+      - db_pay:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pay_user -d pay_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  db-comment:
+    image: postgres:15-alpine
+    <<: *service-defaults
+    environment:
+      POSTGRES_DB: comment_db
+      POSTGRES_USER: comment_user
+      POSTGRES_PASSWORD: comment_pass
+    volumes:
+      - db_comment:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U comment_user -d comment_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  db-recommender:
+    image: postgres:15-alpine
+    <<: *service-defaults
+    environment:
+      POSTGRES_DB: recommender_db
+      POSTGRES_USER: recommender_user
+      POSTGRES_PASSWORD: recommender_pass
+    volumes:
+      - db_recommender:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U recommender_user -d recommender_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ─── Application Services ──────────────────────────────────────────────────
+  auth-service:
+    build: ./auth-service
+    <<: *service-defaults
+    ports:
+      - "8001:8000"
+    environment:
+      <<: *common-env
+      DATABASE_URL: postgresql://auth_user:auth_pass@db-auth:5432/auth_db
+      JWT_SECRET_KEY: "super-secret-jwt-key-change-in-production"
+      JWT_ACCESS_TOKEN_EXPIRE_MINUTES: "60"
+      JWT_REFRESH_TOKEN_EXPIRE_DAYS: "7"
+      SERVICE_NAME: auth-service
+    depends_on:
+      db-auth:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  customer-service:
+    build: ./customer-service
+    <<: *service-defaults
+    ports:
+      - "8002:8000"
+    environment:
+      <<: *common-env
+      DATABASE_URL: postgresql://customer_user:customer_pass@db-customer:5432/customer_db
+      AUTH_SERVICE_URL: http://auth-service:8000
+      CART_SERVICE_URL: http://cart-service:8000
+      SERVICE_NAME: customer-service
+    depends_on:
+      db-customer:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  staff-service:
+    build: ./staff-service
+    <<: *service-defaults
+    ports:
+      - "8003:8000"
+    environment:
+      <<: *common-env
+      DATABASE_URL: postgresql://staff_user:staff_pass@db-staff:5432/staff_db
+      AUTH_SERVICE_URL: http://auth-service:8000
+      BOOK_SERVICE_URL: http://book-service:8000
+      SERVICE_NAME: staff-service
+    depends_on:
+      db-staff:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  manager-service:
+    build: ./manager-service
+    <<: *service-defaults
+    ports:
+      - "8004:8000"
+    environment:
+      <<: *common-env
+      DATABASE_URL: postgresql://manager_user:manager_pass@db-manager:5432/manager_db
+      AUTH_SERVICE_URL: http://auth-service:8000
+      SERVICE_NAME: manager-service
+    depends_on:
+      db-manager:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  catalog-service:
+    build: ./catalog-service
+    <<: *service-defaults
+    ports:
+      - "8005:8000"
+    environment:
+      <<: *common-env
+      DATABASE_URL: postgresql://catalog_user:catalog_pass@db-catalog:5432/catalog_db
+      BOOK_SERVICE_URL: http://book-service:8000
+      SERVICE_NAME: catalog-service
+    depends_on:
+      db-catalog:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  book-service:
+    build: ./book-service
+    <<: *service-defaults
+    ports:
+      - "8006:8000"
+    environment:
+      <<: *common-env
+      DATABASE_URL: postgresql://book_user:book_pass@db-book:5432/book_db
+      SERVICE_NAME: book-service
+    depends_on:
+      db-book:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  cart-service:
+    build: ./cart-service
+    <<: *service-defaults
+    ports:
+      - "8007:8000"
+    environment:
+      <<: *common-env
+      DATABASE_URL: postgresql://cart_user:cart_pass@db-cart:5432/cart_db
+      BOOK_SERVICE_URL: http://book-service:8000
+      SERVICE_NAME: cart-service
+    depends_on:
+      db-cart:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  order-service:
+    build: ./order-service
+    <<: *service-defaults
+    ports:
+      - "8008:8000"
+    environment:
+      <<: *common-env
+      DATABASE_URL: postgresql://order_user:order_pass@db-order:5432/order_db
+      CART_SERVICE_URL: http://cart-service:8000
+      PAY_SERVICE_URL: http://pay-service:8000
+      SHIP_SERVICE_URL: http://ship-service:8000
+      BOOK_SERVICE_URL: http://book-service:8000
+      SERVICE_NAME: order-service
+    depends_on:
+      db-order:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ship-service:
+    build: ./ship-service
+    <<: *service-defaults
+    ports:
+      - "8009:8000"
+    environment:
+      <<: *common-env
+      DATABASE_URL: postgresql://ship_user:ship_pass@db-ship:5432/ship_db
+      SERVICE_NAME: ship-service
+    depends_on:
+      db-ship:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  pay-service:
+    build: ./pay-service
+    <<: *service-defaults
+    ports:
+      - "8010:8000"
+    environment:
+      <<: *common-env
+      DATABASE_URL: postgresql://pay_user:pay_pass@db-pay:5432/pay_db
+      SERVICE_NAME: pay-service
+    depends_on:
+      db-pay:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  comment-rate-service:
+    build: ./comment-rate-service
+    <<: *service-defaults
+    ports:
+      - "8011:8000"
+    environment:
+      <<: *common-env
+      DATABASE_URL: postgresql://comment_user:comment_pass@db-comment:5432/comment_db
+      BOOK_SERVICE_URL: http://book-service:8000
+      ORDER_SERVICE_URL: http://order-service:8000
+      SERVICE_NAME: comment-rate-service
+    depends_on:
+      db-comment:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  recommender-ai-service:
+    build: ./recommender-ai-service
+    <<: *service-defaults
+    ports:
+      - "8012:8000"
+    environment:
+      <<: *common-env
+      DATABASE_URL: postgresql://recommender_user:recommender_pass@db-recommender:5432/recommender_db
+      BOOK_SERVICE_URL: http://book-service:8000
+      ORDER_SERVICE_URL: http://order-service:8000
+      COMMENT_SERVICE_URL: http://comment-rate-service:8000
+      SERVICE_NAME: recommender-ai-service
+    depends_on:
+      db-recommender:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api-gateway:
+    build: ./api-gateway
+    <<: *service-defaults
+    ports:
+      - "8000:8000"
+    environment:
+      <<: *common-env
+      REDIS_URL: redis://redis:6379/0
+      JWT_SECRET_KEY: "super-secret-jwt-key-change-in-production"
+      AUTH_SERVICE_URL: http://auth-service:8000
+      CUSTOMER_SERVICE_URL: http://customer-service:8000
+      STAFF_SERVICE_URL: http://staff-service:8000
+      MANAGER_SERVICE_URL: http://manager-service:8000
+      CATALOG_SERVICE_URL: http://catalog-service:8000
+      BOOK_SERVICE_URL: http://book-service:8000
+      CART_SERVICE_URL: http://cart-service:8000
+      ORDER_SERVICE_URL: http://order-service:8000
+      SHIP_SERVICE_URL: http://ship-service:8000
+      PAY_SERVICE_URL: http://pay-service:8000
+      COMMENT_RATE_SERVICE_URL: http://comment-rate-service:8000
+      RECOMMENDER_SERVICE_URL: http://recommender-ai-service:8000
+      RATE_LIMIT_PER_MINUTE: "60"
+      SERVICE_NAME: api-gateway
+    depends_on:
+      auth-service:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  bookstore-net:
+    driver: bridge
+
+volumes:
+  rabbitmq_data:
+  db_auth:
+  db_customer:
+  db_staff:
+  db_manager:
+  db_catalog:
+  db_book:
+  db_cart:
+  db_order:
+  db_ship:
+  db_pay:
+  db_comment:
+  db_recommender:
