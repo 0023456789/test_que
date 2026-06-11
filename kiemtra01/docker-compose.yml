@@ -1,0 +1,226 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+  postgres:
+    image: postgres:16
+    container_name: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -h 127.0.0.1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+  product_service:
+    build:
+      context: ./product_service
+      dockerfile: Dockerfile
+    container_name: product_service
+    environment:
+      ALLOWED_HOSTS: "*"
+      POSTGRES_DB: product_service_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+    networks:
+      default:
+        aliases:
+          - product-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: sh -c "python manage.py makemigrations && python manage.py migrate && python manage.py seed_products && python manage.py runserver 0.0.0.0:8000"
+    ports:
+      - "8002:8000"
+
+  customer_service:
+    build:
+      context: .
+      dockerfile: customer_service/Dockerfile
+    container_name: customer_service
+    environment:
+      ALLOWED_HOSTS: "*"
+      MYSQL_DATABASE: customer_service_db
+      MYSQL_USER: root
+      MYSQL_PASSWORD: root
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      PRODUCT_SERVICE_URL: http://product-service:8000/api
+    networks:
+      default:
+        aliases:
+          - customer-service
+    depends_on:
+      mysql:
+        condition: service_healthy
+      product_service:
+        condition: service_started
+    command: sh -c "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    ports:
+      - "8001:8000"
+
+  staff_service:
+    build:
+      context: .
+      dockerfile: staff_service/Dockerfile
+    container_name: staff_service
+    environment:
+      ALLOWED_HOSTS: "*"
+      MYSQL_DATABASE: staff_service_db
+      MYSQL_USER: root
+      MYSQL_PASSWORD: root
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      PRODUCT_SERVICE_URL: http://product-service:8000/api
+    networks:
+      default:
+        aliases:
+          - staff-service
+    depends_on:
+      mysql:
+        condition: service_healthy
+      product_service:
+        condition: service_started
+    command: sh -c "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    ports:
+      - "8004:8000"
+
+  api_gateway:
+    build:
+      context: .
+      dockerfile: api_gateway/Dockerfile
+    container_name: api_gateway
+    environment:
+      ALLOWED_HOSTS: "*"
+      CUSTOMER_SERVICE_URL: http://customer-service:8000/api
+      STAFF_SERVICE_URL: http://staff-service:8000/api
+      PRODUCT_SERVICE_URL: http://product-service:8000/api
+      AI_SERVICE_URL: http://ai_service:8000
+    depends_on:
+      customer_service:
+        condition: service_started
+      staff_service:
+        condition: service_started
+      product_service:
+        condition: service_started
+    command: sh -c "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    ports:
+      - "8000:8000"
+
+  chat_service:
+    build:
+      context: .
+      dockerfile: chat_service/Dockerfile
+    container_name: chat_service
+    environment:
+      ALLOWED_HOSTS: "*"
+      AI_CHATBOT_URL: http://ai_service:8000/chatbot
+    depends_on:
+      ai_service:
+        condition: service_healthy
+    networks:
+      default:
+        aliases:
+          - chat-service
+    command: sh -c "python manage.py runserver 0.0.0.0:8000"
+    ports:
+      - "8080:8000"
+
+  ai_service:
+    build:
+      context: ./ai_service
+      dockerfile: Dockerfile
+    container_name: ai_service
+    environment:
+      OLLAMA_BASE_URL: http://ollama:11434
+      OLLAMA_MODEL: phi3.5
+      CUSTOMER_SERVICE_URL: http://customer-service:8000/api
+      NEO4J_URI: bolt://neo4j:7687
+      NEO4J_USER: neo4j
+      NEO4J_PASSWORD: password
+      RECOMMENDER_MODEL_FILE: /data/recommender_model.json
+      PRODUCT_SERVICE_URL: http://product-service:8000/api/api/all-products/
+      PRODUCT_SERVICE_TIMEOUT_SECONDS: 5
+      INDEX_DIR: /data/faiss_index
+      PRODUCT_CATALOG_FILE: /data/products.json
+    volumes:
+      - ./ai_service/data:/data
+    depends_on:
+      product_service:
+        condition: service_started
+      neo4j:
+        condition: service_healthy
+      ollama:
+        condition: service_started
+    ports:
+      - "8008:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  neo4j:
+    image: neo4j:5.22
+    container_name: neo4j
+    environment:
+      NEO4J_AUTH: neo4j/password
+      NEO4J_server_memory_pagecache_size: 512M
+      NEO4J_server_memory_heap_initial__size: 512M
+      NEO4J_server_memory_heap_max__size: 512M
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    volumes:
+      - neo4j_data:/data
+    healthcheck:
+      test: ["CMD", "cypher-shell", "-u", "neo4j", "-p", "password", "RETURN 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  ollama:
+    image: ollama/ollama:0.1.38
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+      - ./docker/ollama-init.sh:/docker-entrypoint-init.d/ollama-init.sh:ro
+    environment:
+      OLLAMA_KEEP_ALIVE: "24h"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+volumes:
+  mysql_data:
+  postgres_data:
+  neo4j_data:
+  ollama_data:

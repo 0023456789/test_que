@@ -1,0 +1,121 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: microservices_postgres
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin_pass
+      POSTGRES_DB: admin
+    ports:
+      - "5432:5432"
+    volumes:
+      - microservices_postgres_data:/var/lib/postgresql/data
+      - ./services/db/init-microservices.sql:/docker-entrypoint-initdb.d/init-microservices.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d admin"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+
+  patient_service:
+    build:
+      context: ./services/patient_service
+      dockerfile: Dockerfile
+    container_name: patient_service
+    environment:
+      DATABASE_URL: postgres://patient_user:patient_pass@postgres:5432/patient_db
+      JWT_SECRET: super-secret-demo-key
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  doctor_service:
+    build:
+      context: ./services/doctor_service
+      dockerfile: Dockerfile
+    container_name: doctor_service
+    environment:
+      DATABASE_URL: postgres://doctor_user:doctor_pass@postgres:5432/doctor_db
+      JWT_SECRET: super-secret-demo-key
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  appointment_service:
+    build:
+      context: ./services/appointment_service
+      dockerfile: Dockerfile
+    container_name: appointment_service
+    environment:
+      PATIENT_SERVICE_URL: http://patient_service:8001
+      DOCTOR_SERVICE_URL: http://doctor_service:8002
+      DATABASE_URL: postgres://appointment_user:appointment_pass@postgres:5432/appointment_db
+      JWT_SECRET: super-secret-demo-key
+    depends_on:
+      postgres:
+        condition: service_healthy
+      patient_service:
+        condition: service_started
+      doctor_service:
+        condition: service_started
+
+  emr_service:
+    build:
+      context: ./services/emr_service
+      dockerfile: Dockerfile
+    container_name: emr_service
+    environment:
+      DATABASE_URL: postgres://emr_user:emr_pass@postgres:5432/emr_db
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  pharmacy_service:
+    build:
+      context: ./services/pharmacy_service
+      dockerfile: Dockerfile
+    container_name: pharmacy_service
+    environment:
+      DATABASE_URL: postgres://pharmacy_user:pharmacy_pass@postgres:5432/pharmacy_db
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  billing_service:
+    build:
+      context: ./services/billing_service
+      dockerfile: Dockerfile
+    container_name: billing_service
+    environment:
+      DATABASE_URL: postgres://billing_user:billing_pass@postgres:5432/billing_db
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  gateway:
+    build:
+      context: ./services/gateway
+    container_name: api_gateway
+    ports:
+      - "80:80"
+    depends_on:
+      - patient_service
+      - doctor_service
+      - appointment_service
+      - emr_service
+      - pharmacy_service
+      - billing_service
+
+  frontend:
+    build:
+      context: .
+      dockerfile: services/frontend/Dockerfile
+    container_name: healthcare_frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - gateway
+
+
+volumes:
+  microservices_postgres_data:

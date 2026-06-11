@@ -1,0 +1,352 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+  postgres:
+    image: postgres:16
+    container_name: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -h 127.0.0.1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+  catalog_service:
+    build:
+      context: .
+      dockerfile: catalog_service/Dockerfile
+    container_name: catalog_service
+    environment:
+      ALLOWED_HOSTS: "*"
+      POSTGRES_DB: catalog_service_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+    networks:
+      default:
+        aliases:
+          - catalog-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: sh -c "python manage.py makemigrations && python manage.py migrate && python manage.py seed_demo_data && python manage.py runserver 0.0.0.0:8000"
+    ports:
+      - "8002:8000"
+
+  tablet_service:
+    build:
+      context: .
+      dockerfile: tablet_service/Dockerfile
+    container_name: tablet_service
+    environment:
+      ALLOWED_HOSTS: "*"
+      POSTGRES_DB: tablet_service_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+    networks:
+      default:
+        aliases:
+          - tablet-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: sh -c "python manage.py makemigrations && python manage.py migrate && python manage.py seed_demo_data && python manage.py runserver 0.0.0.0:8000"
+    ports:
+      - "8005:8000"
+
+  monitor_service:
+    build:
+      context: .
+      dockerfile: monitor_service/Dockerfile
+    container_name: monitor_service
+    environment:
+      ALLOWED_HOSTS: "*"
+      POSTGRES_DB: monitor_service_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+    networks:
+      default:
+        aliases:
+          - monitor-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: sh -c "python manage.py makemigrations && python manage.py migrate && python manage.py seed_demo_data && python manage.py runserver 0.0.0.0:8000"
+    ports:
+      - "8006:8000"
+
+  keyboard_service:
+    build:
+      context: .
+      dockerfile: keyboard_service/Dockerfile
+    container_name: keyboard_service
+    environment:
+      ALLOWED_HOSTS: "*"
+      POSTGRES_DB: keyboard_service_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+    networks:
+      default:
+        aliases:
+          - keyboard-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: sh -c "python manage.py makemigrations && python manage.py migrate && python manage.py seed_demo_data && python manage.py runserver 0.0.0.0:8000"
+    ports:
+      - "8007:8000"
+
+  mouse_service:
+    build:
+      context: .
+      dockerfile: mouse_service/Dockerfile
+    container_name: mouse_service
+    environment:
+      ALLOWED_HOSTS: "*"
+      POSTGRES_DB: mouse_service_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+    networks:
+      default:
+        aliases:
+          - mouse-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: sh -c "python manage.py makemigrations && python manage.py migrate && python manage.py seed_demo_data && python manage.py runserver 0.0.0.0:8000"
+    ports:
+      - "8008:8000"
+
+  headphone_service:
+    build:
+      context: .
+      dockerfile: headphone_service/Dockerfile
+    container_name: headphone_service
+    environment:
+      ALLOWED_HOSTS: "*"
+      POSTGRES_DB: headphone_service_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+    networks:
+      default:
+        aliases:
+          - headphone-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: sh -c "python manage.py makemigrations && python manage.py migrate && python manage.py seed_demo_data && python manage.py runserver 0.0.0.0:8000"
+    ports:
+      - "8009:8000"
+
+  speaker_service:
+    build:
+      context: .
+      dockerfile: speaker_service/Dockerfile
+    container_name: speaker_service
+    environment:
+      ALLOWED_HOSTS: "*"
+      POSTGRES_DB: speaker_service_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+    networks:
+      default:
+        aliases:
+          - speaker-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: sh -c "python manage.py makemigrations && python manage.py migrate && python manage.py seed_demo_data && python manage.py runserver 0.0.0.0:8000"
+    ports:
+      - "8010:8000"
+
+  camera_service:
+    build:
+      context: .
+      dockerfile: camera_service/Dockerfile
+    container_name: camera_service
+    environment:
+      ALLOWED_HOSTS: "*"
+      POSTGRES_DB: camera_service_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+    networks:
+      default:
+        aliases:
+          - camera-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: sh -c "python manage.py makemigrations && python manage.py migrate && python manage.py seed_demo_data && python manage.py runserver 0.0.0.0:8000"
+    ports:
+      - "8011:8000"
+
+  printer_service:
+    build:
+      context: .
+      dockerfile: printer_service/Dockerfile
+    container_name: printer_service
+    environment:
+      ALLOWED_HOSTS: "*"
+      POSTGRES_DB: printer_service_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+    networks:
+      default:
+        aliases:
+          - printer-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: sh -c "python manage.py makemigrations && python manage.py migrate && python manage.py seed_demo_data && python manage.py runserver 0.0.0.0:8000"
+    ports:
+      - "8012:8000"
+
+  customer_service:
+    build:
+      context: .
+      dockerfile: customer_service/Dockerfile
+    container_name: customer_service
+    environment:
+      ALLOWED_HOSTS: "*"
+      MYSQL_DATABASE: customer_service_db
+      MYSQL_USER: root
+      MYSQL_PASSWORD: root
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      COMPUTER_SERVICE_URL: http://catalog-service:8000
+      MOBILE_SERVICE_URL: http://catalog-service:8000
+      TABLET_SERVICE_URL: http://tablet-service:8000
+      MONITOR_SERVICE_URL: http://monitor-service:8000
+      KEYBOARD_SERVICE_URL: http://keyboard-service:8000
+      MOUSE_SERVICE_URL: http://mouse-service:8000
+      HEADPHONE_SERVICE_URL: http://headphone-service:8000
+      SPEAKER_SERVICE_URL: http://speaker-service:8000
+      CAMERA_SERVICE_URL: http://camera-service:8000
+      PRINTER_SERVICE_URL: http://printer-service:8000
+    networks:
+      default:
+        aliases:
+          - customer-service
+    depends_on:
+      mysql:
+        condition: service_healthy
+      catalog_service:
+        condition: service_started
+    command: sh -c "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    ports:
+      - "8001:8000"
+
+  staff_service:
+    build:
+      context: .
+      dockerfile: staff_service/Dockerfile
+    container_name: staff_service
+    environment:
+      ALLOWED_HOSTS: "*"
+      MYSQL_DATABASE: staff_service_db
+      MYSQL_USER: root
+      MYSQL_PASSWORD: root
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      COMPUTER_SERVICE_URL: http://catalog-service:8000
+      MOBILE_SERVICE_URL: http://catalog-service:8000
+    networks:
+      default:
+        aliases:
+          - staff-service
+    depends_on:
+      mysql:
+        condition: service_healthy
+      catalog_service:
+        condition: service_started
+    command: sh -c "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    ports:
+      - "8004:8000"
+
+  api_gateway:
+    build:
+      context: .
+      dockerfile: api_gateway/Dockerfile
+    container_name: api_gateway
+    environment:
+      ALLOWED_HOSTS: "*"
+      CUSTOMER_SERVICE_URL: http://customer-service:8000/api
+      STAFF_SERVICE_URL: http://staff-service:8000/api
+      COMPUTER_SERVICE_URL: http://catalog-service:8000/api
+      MOBILE_SERVICE_URL: http://catalog-service:8000/api
+      TABLET_SERVICE_URL: http://tablet-service:8000/api
+      MONITOR_SERVICE_URL: http://monitor-service:8000/api
+      KEYBOARD_SERVICE_URL: http://keyboard-service:8000/api
+      MOUSE_SERVICE_URL: http://mouse-service:8000/api
+      HEADPHONE_SERVICE_URL: http://headphone-service:8000/api
+      SPEAKER_SERVICE_URL: http://speaker-service:8000/api
+      CAMERA_SERVICE_URL: http://camera-service:8000/api
+      PRINTER_SERVICE_URL: http://printer-service:8000/api
+    depends_on:
+      customer_service:
+        condition: service_started
+      staff_service:
+        condition: service_started
+      catalog_service:
+        condition: service_started
+      tablet_service:
+        condition: service_started
+      monitor_service:
+        condition: service_started
+      keyboard_service:
+        condition: service_started
+      mouse_service:
+        condition: service_started
+      headphone_service:
+        condition: service_started
+      speaker_service:
+        condition: service_started
+      camera_service:
+        condition: service_started
+      printer_service:
+        condition: service_started
+    command: sh -c "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    ports:
+      - "8000:8000"
+
+volumes:
+  mysql_data:
+  postgres_data:
+
+

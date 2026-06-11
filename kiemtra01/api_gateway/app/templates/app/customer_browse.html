@@ -1,0 +1,1212 @@
+{% extends "app/base.html" %}
+{% load static %}
+{% block title %}Shop – TechVault Electronics{% endblock %}
+{% block meta_description %}Browse computers, phones, tablets, monitors, keyboards, mice, headphones, speakers, cameras, and printers with fast filters.{% endblock %}
+
+{% block extra_head %}
+<style>
+  .hero {
+    position: relative;
+    overflow: hidden;
+    margin: 0 auto;
+    padding: 5rem 2rem 3rem;
+  }
+  .hero::before,
+  .hero::after {
+    content: '';
+    position: absolute;
+    border-radius: 999px;
+    pointer-events: none;
+  }
+  .hero::before {
+    width: 26rem;
+    height: 26rem;
+    left: -8rem;
+    top: -10rem;
+    background: radial-gradient(circle, rgba(15, 98, 254, 0.10) 0%, transparent 70%);
+  }
+  .hero::after {
+    width: 24rem;
+    height: 24rem;
+    right: -8rem;
+    bottom: -11rem;
+    background: radial-gradient(circle, rgba(245, 158, 11, 0.12) 0%, transparent 70%);
+  }
+  .hero-content {
+    position: relative;
+    z-index: 1;
+    max-width: 920px;
+    margin: 0 auto;
+  }
+  .hero-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.35rem 0.95rem;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.82);
+    border: 1px solid var(--border);
+    color: var(--accent-strong);
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    box-shadow: var(--shadow-soft);
+  }
+  .hero-title {
+    margin: 1.15rem 0 0.9rem;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(2.7rem, 7vw, 5.4rem);
+    line-height: 0.95;
+    letter-spacing: -0.07em;
+    font-weight: 700;
+    max-width: 12ch;
+  }
+  .hero-title .grad {
+    background: linear-gradient(135deg, #0f62fe, #7c3aed);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .hero-subtitle {
+    max-width: 44rem;
+    margin: 0 auto 1.75rem;
+    color: var(--text-soft);
+    font-size: 1.08rem;
+  }
+  .hero-search {
+    display: flex;
+    gap: 0.75rem;
+    max-width: 640px;
+    margin: 0 auto;
+  }
+  .hero-search input {
+    flex: 1;
+    min-height: 56px;
+    padding: 0.9rem 1.15rem;
+    border-radius: 18px;
+    border: 1px solid rgba(15, 23, 42, 0.10);
+    background: rgba(255,255,255,0.86);
+    color: var(--text);
+    font: inherit;
+    outline: none;
+    box-shadow: var(--shadow-soft);
+  }
+  .hero-search input:focus { border-color: rgba(15, 98, 254, 0.35); box-shadow: 0 0 0 4px rgba(15, 98, 254, 0.10); }
+  .hero-search input::placeholder { color: var(--text-muted); }
+
+  .stats-bar {
+    margin: 0 1rem;
+    padding: 1.25rem 2rem 0.5rem;
+  }
+  .stats-inner {
+    max-width: 1180px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+  }
+  .stat-item {
+    padding: 1rem 1rem 0.9rem;
+    border-radius: 22px;
+    background: rgba(255,255,255,0.8);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-soft);
+    text-align: left;
+  }
+  .stat-value { font-size: 1.35rem; font-weight: 800; color: var(--text); }
+  .stat-label { font-size: 0.78rem; color: var(--text-soft); margin-top: 0.2rem; }
+
+  /* ── AI Recommendation Section ─────────────────────────── */
+  .ai-reco-section {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 0 2rem 1.5rem;
+  }
+  .ai-reco-panel {
+    padding: 1.5rem 1.5rem 1.25rem;
+    border-radius: 28px;
+    border: 1px solid rgba(15, 98, 254, 0.13);
+    background:
+      linear-gradient(135deg, rgba(15,98,254,0.055) 0%, rgba(245,158,11,0.04) 100%),
+      rgba(255,255,255,0.92);
+    box-shadow: 0 12px 40px rgba(15,23,42,0.07), inset 0 1px 0 rgba(255,255,255,0.9);
+    position: relative;
+    overflow: hidden;
+  }
+  .ai-reco-panel::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 200px; height: 200px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(15,98,254,0.07) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  /* Header row */
+  .ai-reco-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 1.1rem;
+  }
+  .ai-reco-header-left { flex: 1; min-width: 0; }
+  .ai-reco-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.8rem;
+    border-radius: 999px;
+    background: linear-gradient(135deg, rgba(15,98,254,0.10), rgba(124,58,237,0.08));
+    border: 1px solid rgba(15,98,254,0.12);
+    color: var(--accent-strong);
+    font-size: 0.7rem;
+    font-weight: 900;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    margin-bottom: 0.55rem;
+  }
+  .ai-reco-eyebrow-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: ai-pulse 2s ease-in-out infinite;
+  }
+  @keyframes ai-pulse {
+    0%,100% { opacity:1; transform:scale(1); }
+    50% { opacity:0.45; transform:scale(0.7); }
+  }
+  .ai-reco-title {
+    margin: 0 0 0.3rem;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.02em;
+  }
+  .ai-reco-summary {
+    margin: 0;
+    color: var(--text-soft);
+    font-size: 0.86rem;
+    line-height: 1.55;
+    max-width: 58rem;
+    min-height: 1.2em;
+    transition: opacity 0.2s;
+  }
+
+  /* Tabs */
+  .ai-reco-tabs {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .ai-reco-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.42rem 0.9rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.6);
+    color: var(--text-soft);
+    font: inherit;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background var(--transition), border-color var(--transition), color var(--transition), transform var(--transition);
+    white-space: nowrap;
+  }
+  .ai-reco-tab:hover {
+    background: rgba(255,255,255,0.9);
+    color: var(--text);
+    transform: translateY(-1px);
+  }
+  .ai-reco-tab.active {
+    background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+    border-color: transparent;
+    color: #fff;
+    box-shadow: 0 8px 18px rgba(15,98,254,0.22);
+  }
+  .ai-reco-refresh {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.42rem 0.9rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.6);
+    color: var(--text-soft);
+    font: inherit;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background var(--transition), border-color var(--transition), color var(--transition), transform var(--transition);
+    margin-left: 0.25rem;
+  }
+  .ai-reco-refresh:hover { background: rgba(255,255,255,0.9); color: var(--accent-strong); transform: translateY(-1px); }
+  .ai-reco-refresh svg { transition: transform 0.5s; }
+  .ai-reco-refresh.spinning svg { animation: spin 0.7s linear infinite; }
+
+  /* Grid + cards */
+  .ai-reco-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(195px, 1fr));
+    gap: 0.75rem;
+    margin-top: 1rem;
+  }
+  .ai-reco-card {
+    padding: 0;
+    border-radius: 20px;
+    background: rgba(255,255,255,0.95);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-soft);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
+    animation: cardFadeIn 0.35s cubic-bezier(0.4,0,0.2,1) both;
+  }
+  @keyframes cardFadeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .ai-reco-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 18px 40px rgba(15,23,42,0.1);
+    border-color: rgba(15,98,254,0.18);
+  }
+  .ai-reco-card-img {
+    aspect-ratio: 16/9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.4rem;
+    background:
+      radial-gradient(circle at 30% 30%, rgba(15,98,254,0.10), transparent 55%),
+      linear-gradient(180deg, rgba(255,255,255,0.9), rgba(242,245,252,0.9));
+    position: relative;
+  }
+  .ai-score-badge {
+    position: absolute;
+    top: 8px; right: 8px;
+    display: flex;
+    align-items: center;
+    gap: 0.22rem;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.88);
+    border: 1px solid rgba(245,158,11,0.25);
+    font-size: 0.68rem;
+    font-weight: 800;
+    color: #b45309;
+    backdrop-filter: blur(6px);
+  }
+  .ai-reco-card-body {
+    padding: 0.8rem 0.9rem 0.85rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+  .ai-reco-card-brand {
+    font-size: 0.68rem;
+    font-weight: 800;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  .ai-reco-card-name {
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: var(--text);
+    line-height: 1.3;
+  }
+  .ai-reco-card-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: auto;
+    padding-top: 0.6rem;
+    border-top: 1px solid var(--border);
+    gap: 0.5rem;
+  }
+  .ai-reco-card-price {
+    font-size: 1rem;
+    font-weight: 900;
+    color: var(--text);
+  }
+  .ai-reco-stock-ok  { font-size: 0.7rem; font-weight: 800; color: var(--success); }
+  .ai-reco-stock-low { font-size: 0.7rem; font-weight: 800; color: var(--warning); }
+  .ai-reco-card-btn {
+    width: 100%;
+    margin-top: 0.55rem;
+    min-height: 38px;
+    border: none;
+    border-radius: 12px;
+    color: #fff;
+    background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+    font: inherit;
+    font-size: 0.8rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: transform var(--transition), opacity var(--transition), box-shadow var(--transition);
+    box-shadow: 0 8px 18px rgba(15,98,254,0.18);
+  }
+  .ai-reco-card-btn:hover { opacity:0.94; transform:translateY(-1px); }
+  .ai-reco-card-btn:disabled { opacity:0.4; cursor:not-allowed; transform:none; box-shadow:none; }
+
+  /* Skeleton */
+  .ai-reco-skeleton {
+    border-radius: 20px;
+    background: rgba(255,255,255,0.8);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    animation: skeleton-shimmer 1.3s ease-in-out infinite;
+  }
+  @keyframes skeleton-shimmer {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+  .ai-skel-img { height: 80px; background: rgba(15,23,42,0.06); }
+  .ai-skel-body { padding: 0.8rem 0.9rem; display:flex; flex-direction:column; gap:0.4rem; }
+  .ai-skel-line { height:10px; border-radius:6px; background:rgba(15,23,42,0.06); }
+  .ai-skel-line.w-40 { width:40%; }
+  .ai-skel-line.w-80 { width:80%; }
+  .ai-skel-line.w-60 { width:60%; }
+  .ai-skel-btn { margin:0.55rem 0.9rem 0.85rem; height:32px; border-radius:10px; background:rgba(15,23,42,0.06); }
+
+  /* Guest prompt */
+  .ai-reco-guest {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.9rem 1.1rem;
+    border-radius: 16px;
+    background: rgba(15,98,254,0.06);
+    border: 1px solid rgba(15,98,254,0.12);
+    margin-top: 0.75rem;
+    font-size: 0.88rem;
+    color: var(--text-soft);
+  }
+  .ai-reco-guest strong { color: var(--accent-strong); }
+  .ai-reco-guest a { color: var(--accent-strong); font-weight: 700; text-decoration: none; }
+  .ai-reco-guest a:hover { text-decoration: underline; }
+
+  .shop-layout {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 2rem 2rem 3rem;
+    display: grid;
+    grid-template-columns: 290px minmax(0, 1fr);
+    gap: 1.5rem;
+    align-items: start;
+  }
+
+  .filter-panel {
+    position: sticky;
+    top: calc(var(--nav-height) + 1rem);
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    padding: 1.4rem;
+    border-radius: 24px;
+    background: rgba(255,255,255,0.84);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-soft);
+  }
+  .filter-title { font-family: 'Space Grotesk', sans-serif; font-size: 1.2rem; font-weight: 700; margin: 0; }
+  .filter-section-title {
+    margin-bottom: 0.65rem;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .filter-chips { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 0.8rem;
+    border-radius: 999px;
+    background: rgba(15,23,42,0.04);
+    border: 1px solid transparent;
+    color: var(--text-soft);
+    cursor: pointer;
+    transition: transform var(--transition), background var(--transition), border-color var(--transition), color var(--transition);
+    user-select: none;
+    font-size: 0.84rem;
+    font-weight: 700;
+  }
+  .chip:hover { transform: translateY(-1px); background: rgba(15,98,254,0.06); color: var(--accent-strong); }
+  .chip.selected { background: var(--accent-soft); border-color: rgba(15, 98, 254, 0.18); color: var(--accent-strong); }
+
+  .price-row { display: flex; gap: 0.6rem; align-items: center; }
+  .price-sep { color: var(--text-muted); }
+  .filter-panel .form-input {
+    min-height: 46px;
+    padding: 0.65rem 0.85rem;
+    border-radius: 14px;
+    background: rgba(255,255,255,0.95);
+  }
+
+  .shop-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 1rem; gap: 0.75rem; flex-wrap: wrap; }
+  .results-count { color: var(--text-soft); font-size: 0.94rem; }
+
+  .product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1rem;
+  }
+
+  .product-card {
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    border-radius: 26px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.86);
+    box-shadow: var(--shadow-soft);
+    transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
+    cursor: pointer;
+  }
+  .product-card:hover {
+    transform: translateY(-5px);
+    border-color: rgba(15,98,254,0.18);
+    box-shadow: var(--shadow);
+  }
+  .product-img {
+    aspect-ratio: 4 / 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    font-size: 4.1rem;
+    background:
+      radial-gradient(circle at top, rgba(15,98,254,0.12), transparent 55%),
+      linear-gradient(180deg, rgba(255,255,255,0.95), rgba(242, 245, 250, 0.95));
+  }
+  .product-type-badge { position: absolute; top: 14px; left: 14px; }
+  .product-body { padding: 1rem 1rem 1.05rem; flex: 1; display: flex; flex-direction: column; gap: 0.48rem; }
+  .product-brand { font-size: 0.72rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.12em; }
+  .product-name { font-size: 1rem; font-weight: 700; color: var(--text); line-height: 1.35; }
+  .product-specs { font-size: 0.84rem; color: var(--text-soft); line-height: 1.5; }
+  .product-footer { display: flex; align-items: center; justify-content: space-between; margin-top: auto; padding-top: 0.85rem; gap: 0.75rem; }
+  .product-price { font-size: 1.2rem; font-weight: 800; color: var(--text); }
+  .product-stock-ok, .product-stock-out { font-size: 0.74rem; font-weight: 800; }
+  .product-stock-ok { color: var(--success); }
+  .product-stock-out { color: var(--danger); }
+
+  .add-cart-btn {
+    width: 100%;
+    margin-top: 0.85rem;
+    min-height: 46px;
+    border: none;
+    border-radius: 16px;
+    color: #fff;
+    background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+    font: inherit;
+    font-size: 0.9rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: transform var(--transition), opacity var(--transition), box-shadow var(--transition);
+    box-shadow: 0 14px 22px rgba(15,98,254,0.18);
+  }
+  .add-cart-btn:hover { opacity: 0.95; transform: translateY(-1px); }
+  .add-cart-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  .state-box {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4.5rem 2rem;
+    text-align: center;
+    gap: 1rem;
+    color: var(--text-soft);
+  }
+  .state-icon { font-size: 3.2rem; }
+
+  #toast {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    z-index: 9999;
+    max-width: 340px;
+    padding: 0.9rem 1.1rem;
+    border-radius: 18px;
+    background: rgba(15,157,88,0.94);
+    border: 1px solid rgba(255,255,255,0.16);
+    color: #fff;
+    box-shadow: 0 16px 34px rgba(15,157,88,0.18);
+    transform: translateY(120px);
+    opacity: 0;
+    transition: transform 240ms cubic-bezier(0.4,0,0.2,1), opacity 240ms cubic-bezier(0.4,0,0.2,1);
+    pointer-events: none;
+    font-size: 0.92rem;
+    font-weight: 700;
+  }
+  #toast.show { transform: translateY(0); opacity: 1; }
+  #toast.error-toast { background: rgba(214,69,69,0.96); }
+
+  @media (max-width: 980px) {
+    .stats-inner { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .shop-layout { grid-template-columns: 1fr; }
+    .filter-panel { position: static; }
+  }
+  @media (max-width: 640px) {
+    .hero { padding: 4rem 1rem 2rem; }
+    .hero-search { flex-direction: column; }
+    .shop-layout { padding: 1.5rem 1rem 2.5rem; }
+    .stats-bar { margin: 0; padding: 1rem 1rem 0.5rem; }
+    .stats-inner { grid-template-columns: 1fr; }
+    .product-grid { grid-template-columns: 1fr; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-eyebrow">New arrivals every week</div>
+    <h1 class="hero-title">Technology, curated like a <span class="grad">showroom</span>.</h1>
+    <p class="hero-subtitle">A cleaner way to browse computers, mobiles, tablets, and accessories with fast filters, transparent pricing, and a calm checkout flow.</p>
+    <div class="hero-search">
+      <input type="text" id="hero-search-input" placeholder="Search products, brands, categories…"
+             value="{{ q }}"
+             onkeydown="if(event.key==='Enter') applySearch()"/>
+      <button class="btn btn-primary" onclick="applySearch()" id="hero-search-btn">Search</button>
+    </div>
+  </div>
+</section>
+
+<!-- Stats -->
+<div class="stats-bar">
+  <div class="stats-inner">
+    <div class="stat-item"><div class="stat-value" id="stat-products">–</div><div class="stat-label">Products</div></div>
+    <div class="stat-item"><div class="stat-value" id="stat-categories">10</div><div class="stat-label">Categories</div></div>
+    <div class="stat-item"><div class="stat-value">⚡ Fast</div><div class="stat-label">Delivery</div></div>
+    <div class="stat-item"><div class="stat-value">🔒 Secure</div><div class="stat-label">Checkout</div></div>
+  </div>
+</div>
+
+<!-- AI Recommendation Section -->
+<section class="ai-reco-section" id="ai-reco-section">
+  <div class="ai-reco-panel">
+
+    <div class="ai-reco-header">
+      <div class="ai-reco-header-left">
+        <div class="ai-reco-eyebrow">
+          <span class="ai-reco-eyebrow-dot"></span>
+          AI Recommendations
+        </div>
+        <h2 class="ai-reco-title">Picked for You</h2>
+        <p class="ai-reco-summary" id="ai-reco-summary">Loading your personalised picks…</p>
+      </div>
+      <div class="ai-reco-tabs" id="ai-reco-tabs">
+        <button class="ai-reco-tab active" id="ai-tab-personal" onclick="switchRecoTab('personal')">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          For You
+        </button>
+        <button class="ai-reco-tab" id="ai-tab-popular" onclick="switchRecoTab('popular')">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          Popular
+        </button>
+        <button class="ai-reco-refresh" id="ai-reco-refresh-btn" onclick="refreshCurrentRecoTab()" title="Refresh">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          Refresh
+        </button>
+      </div>
+    </div>
+
+    <div class="ai-reco-grid" id="ai-reco-grid">
+      <!-- filled by JS -->
+    </div>
+
+  </div>
+</section>
+
+<!-- Shop -->
+<div class="shop-layout">
+
+  <!-- Filter Panel -->
+  <aside class="filter-panel" id="filter-panel">
+    <div>
+      <p class="filter-title">Browse</p>
+    </div>
+
+    <div>
+      <p class="filter-section-title">Category</p>
+      <div class="filter-chips">
+        <span class="chip {% if item_type == '' %}selected{% endif %}" onclick="setFilter('item_type','')" id="chip-all">All</span>
+        <span class="chip {% if item_type == 'computers' %}selected{% endif %}" onclick="setFilter('item_type','computers')" id="chip-computers">💻 Computers</span>
+        <span class="chip {% if item_type == 'mobiles' %}selected{% endif %}" onclick="setFilter('item_type','mobiles')" id="chip-mobiles">📱 Phones</span>
+        <span class="chip {% if item_type == 'tablets' %}selected{% endif %}" onclick="setFilter('item_type','tablets')" id="chip-tablets">🧾 Tablets</span>
+        <span class="chip {% if item_type == 'smartwatches' %}selected{% endif %}" onclick="setFilter('item_type','smartwatches')" id="chip-smartwatches">⌚ Smartwatches</span>
+        <span class="chip {% if item_type == 'headphones' %}selected{% endif %}" onclick="setFilter('item_type','headphones')" id="chip-headphones">🎧 Headphones</span>
+        <span class="chip {% if item_type == 'cameras' %}selected{% endif %}" onclick="setFilter('item_type','cameras')" id="chip-cameras">� Cameras</span>
+        <span class="chip {% if item_type == 'gaming_consoles' %}selected{% endif %}" onclick="setFilter('item_type','gaming_consoles')" id="chip-gaming_consoles">� Gaming</span>
+        <span class="chip {% if item_type == 'tvs' %}selected{% endif %}" onclick="setFilter('item_type','tvs')" id="chip-tvs">📺 TVs</span>
+        <span class="chip {% if item_type == 'smart_homes' %}selected{% endif %}" onclick="setFilter('item_type','smart_homes')" id="chip-smart_homes">🏠 Smart Home</span>
+        <span class="chip {% if item_type == 'fitness_trackers' %}selected{% endif %}" onclick="setFilter('item_type','fitness_trackers')" id="chip-fitness_trackers">� Fitness</span>
+        <span class="chip {% if item_type == 'drones' %}selected{% endif %}" onclick="setFilter('item_type','drones')" id="chip-drones">� Drones</span>
+      </div>
+    </div>
+
+    <div>
+      <p class="filter-section-title">Brand</p>
+      <div class="filter-chips" id="brand-chips">
+        <span class="chip {% if brand == '' %}selected{% endif %}" onclick="setFilter('brand','')" id="chip-brand-all">All</span>
+      </div>
+    </div>
+
+    <div>
+      <p class="filter-section-title">Price Range</p>
+      <div class="price-row">
+        <input type="number" class="form-input" id="min-price" placeholder="Min" value="{{ min_price }}" min="0" step="1000"/>
+        <span class="price-sep">–</span>
+        <input type="number" class="form-input" id="max-price" placeholder="Max" value="{{ max_price }}" min="0" step="1000"/>
+      </div>
+    </div>
+
+    <div>
+      <p class="filter-section-title">Availability</p>
+      <div class="filter-chips">
+        <span class="chip" onclick="setFilter('in_stock','')"   id="chip-stock-all">All</span>
+        <span class="chip" onclick="setFilter('in_stock','1')"  id="chip-in-stock">In Stock</span>
+      </div>
+    </div>
+
+    <button class="btn btn-primary btn-full" onclick="loadProducts()" id="apply-filters-btn">Apply Filters</button>
+    <button class="btn btn-secondary btn-full" onclick="clearFilters()" id="clear-filters-btn">Clear</button>
+  </aside>
+
+  <!-- Product Area -->
+  <main>
+    <div class="shop-header">
+      <div>
+        <h2 style="font-size:1.4rem;font-weight:700;" id="section-title">All Products</h2>
+        <p class="results-count" id="results-count">Loading…</p>
+      </div>
+    </div>
+
+    <div id="alert-area"></div>
+
+    <div class="product-grid" id="product-grid">
+      <!-- Loading state -->
+      <div class="state-box" id="loading-state">
+        <div class="spinner" style="width:36px;height:36px;border-width:3px;"></div>
+        <p>Loading products…</p>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  // ── State ──────────────────────────────────────────────────────
+  const filters = {
+    q:         '{{ q|escapejs }}',
+    item_type: '{{ item_type|escapejs }}',
+    brand:     '{{ brand|escapejs }}',
+    min_price: '{{ min_price|escapejs }}',
+    max_price: '{{ max_price|escapejs }}',
+    in_stock:  '',
+  };
+
+  let allProducts = [];
+  const ITEM_TYPE_META = {
+    computers:        { icon: '💻', label: 'Computer',      badgeClass: 'badge-blue' },
+    mobiles:          { icon: '📱', label: 'Smartphone',    badgeClass: 'badge-yellow' },
+    tablets:          { icon: '🧾', label: 'Tablet',        badgeClass: 'badge-blue' },
+    smartwatches:     { icon: '⌚', label: 'Smartwatch',    badgeClass: 'badge-purple' },
+    headphones:       { icon: '🎧', label: 'Headphone',     badgeClass: 'badge-yellow' },
+    cameras:          { icon: '�', label: 'Camera',        badgeClass: 'badge-blue' },
+    gaming_consoles:  { icon: '�', label: 'Gaming Console',badgeClass: 'badge-red' },
+    tvs:              { icon: '�', label: 'TV',            badgeClass: 'badge-blue' },
+    smart_homes:      { icon: '🏠', label: 'Smart Home',    badgeClass: 'badge-green' },
+    fitness_trackers: { icon: '💪', label: 'Fitness Tracker',badgeClass: 'badge-orange' },
+    drones:           { icon: '�', label: 'Drone',         badgeClass: 'badge-blue' },
+  };
+  const PRODUCT_TYPE_TO_CART_TYPE = {
+    computers: 'computer',
+    mobiles: 'mobile',
+    tablets: 'tablet',
+    smartwatches: 'smartwatch',
+    headphones: 'headphone',
+    cameras: 'camera',
+    gaming_consoles: 'gaming_console',
+    tvs: 'tv',
+    smart_homes: 'smart_home',
+    fitness_trackers: 'fitness_tracker',
+    drones: 'drone',
+  };
+
+  // ── Toast ──────────────────────────────────────────────────────
+  function showToast(msg, isError = false) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'show' + (isError ? ' error-toast' : '');
+    setTimeout(() => t.className = '', 3500);
+  }
+
+  // ── Load Products ──────────────────────────────────────────────
+  async function loadProducts() {
+    const grid = document.getElementById('product-grid');
+    grid.innerHTML = '<div class="state-box"><div class="spinner" style="width:36px;height:36px;border-width:3px;"></div><p>Loading products…</p></div>';
+
+    // Read price inputs
+    filters.min_price = document.getElementById('min-price').value;
+    filters.max_price = document.getElementById('max-price').value;
+    filters.q         = document.getElementById('hero-search-input').value;
+
+    const params = new URLSearchParams();
+    Object.entries(filters).forEach(([k,v]) => { if(v) params.set(k, v); });
+
+    try {
+      let apiUrl;
+      if (filters.item_type && filters.item_type !== '') {
+        // Use specific product type endpoint
+        apiUrl = `/proxy/product/api/${filters.item_type}/?` + params.toString();
+      } else {
+        // Use all products endpoint
+        apiUrl = `/proxy/product/api/all-products/?` + params.toString();
+      }
+      
+      const res = await fetch(apiUrl);
+      if (!res.ok) throw new Error('Server error');
+      const data = await res.json();
+      allProducts = data.items || [];
+      
+      // Add product_type to each item if not present
+      allProducts.forEach(item => {
+        if (!item.product_type) {
+          item.product_type = filters.item_type || 'unknown';
+        }
+      });
+      
+      renderProducts(allProducts);
+      buildBrandChips(allProducts);
+      document.getElementById('stat-products').textContent = allProducts.length;
+    } catch(e) {
+      grid.innerHTML = `<div class="state-box"><div class="state-icon">⚠️</div><p>Failed to load products. Make sure the services are running.</p></div>`;
+    }
+  }
+
+  // ── Render Products ────────────────────────────────────────────
+  function renderProducts(items) {
+    const grid = document.getElementById('product-grid');
+    const count = document.getElementById('results-count');
+
+    if (items.length === 0) {
+      grid.innerHTML = `<div class="state-box"><div class="state-icon">🔍</div><p>No products found. Try adjusting your filters.</p></div>`;
+      count.textContent = '0 results';
+      return;
+    }
+
+    count.textContent = `${items.length} product${items.length !== 1 ? 's' : ''} found`;
+    grid.innerHTML = items.map(item => productCard(item)).join('');
+  }
+
+  function productCard(item) {
+    const productType = item.product_type || item.item_type || 'unknown';
+    const meta = ITEM_TYPE_META[productType] || { icon: '📦', label: 'Product', badgeClass: 'badge-blue' };
+    const icon = meta.icon;
+    const badge = `<span class="badge ${meta.badgeClass}">${escHtml(meta.label)}</span>`;
+    const inStock = item.stock > 0;
+    const stockLabel = inStock
+      ? `<span class="product-stock-ok">✓ In Stock (${item.stock})</span>`
+      : `<span class="product-stock-out">✗ Out of Stock</span>`;
+
+    // Build specs based on product type
+    const specs = buildProductSpecs(item, productType);
+
+    const price = new Intl.NumberFormat('en-US', { style:'currency', currency:'USD' }).format(item.price);
+
+    return `
+    <div class="product-card" onclick="cardClick(event, '${productType}', ${item.id})">
+      <div class="product-img">
+        ${icon}
+        <div class="product-type-badge">${badge}</div>
+      </div>
+      <div class="product-body">
+        <p class="product-brand">${escHtml(item.brand)}</p>
+        <p class="product-name">${escHtml(item.name)}</p>
+        <p class="product-specs">${escHtml(specs)}</p>
+        <div class="product-footer">
+          <span class="product-price">${price}</span>
+          ${stockLabel}
+        </div>
+        <button class="add-cart-btn" ${!inStock ? 'disabled' : ''}
+                onclick="event.stopPropagation(); addToCart('${productType}', ${item.id}, ${item.price}, '${escHtml(item.name).replace(/'/g,"\\'")}')">
+          ${inStock ? '🛒 Add to Cart' : 'Out of Stock'}
+        </button>
+      </div>
+    </div>`;
+  }
+
+  function buildProductSpecs(item, productType) {
+    const specs = [];
+    
+    // Common specs
+    if (item.cpu) specs.push(item.cpu);
+    if (item.chipset) specs.push(item.chipset);
+    if (item.ram_gb) specs.push(`${item.ram_gb}GB RAM`);
+    if (item.storage_gb) specs.push(`${item.storage_gb}GB Storage`);
+    
+    // Product-specific specs
+    switch(productType) {
+      case 'computers':
+        if (item.display_size_inches) specs.push(`${item.display_size_inches}"`);
+        if (item.gpu) specs.push(item.gpu);
+        break;
+      case 'mobiles':
+        if (item.display_size_inches) specs.push(`${item.display_size_inches}"`);
+        if (item.main_camera_mp) specs.push(`${item.main_camera_mp}MP Camera`);
+        if (item.has_5g) specs.push('5G');
+        break;
+      case 'tablets':
+        if (item.display_size_inches) specs.push(`${item.display_size_inches}"`);
+        if (item.has_stylus_support) specs.push('Stylus Support');
+        break;
+      case 'smartwatches':
+        if (item.display_size_inches) specs.push(`${item.display_size_inches}"`);
+        if (item.has_gps) specs.push('GPS');
+        if (item.has_heart_rate_monitor) specs.push('Heart Rate');
+        break;
+      case 'headphones':
+        if (item.headphone_type) specs.push(item.headphone_type.replace('_', ' '));
+        if (item.has_noise_cancelling) specs.push('Noise Cancelling');
+        if (item.battery_hours) specs.push(`${item.battery_hours}h Battery`);
+        break;
+      case 'cameras':
+        if (item.camera_type) specs.push(item.camera_type);
+        if (item.megapixels) specs.push(`${item.megapixels}MP`);
+        if (item.sensor_type) specs.push(item.sensor_type.replace('_', ' '));
+        break;
+      case 'gaming_consoles':
+        if (item.console_type) specs.push(item.console_type);
+        if (item.storage_gb) specs.push(`${item.storage_gb}GB`);
+        if (item.has_4k_support) specs.push('4K Support');
+        break;
+      case 'tvs':
+        if (item.display_size_inches) specs.push(`${item.display_size_inches}"`);
+        if (item.resolution) specs.push(item.resolution);
+        if (item.display_type) specs.push(item.display_type.toUpperCase());
+        break;
+      case 'smart_homes':
+        if (item.smart_category) specs.push(item.smart_category.replace('_', ' '));
+        if (item.voice_assistant) specs.push(item.voice_assistant);
+        break;
+      case 'fitness_trackers':
+        if (item.tracker_type) specs.push(item.tracker_type.replace('_', ' '));
+        if (item.has_gps) specs.push('GPS');
+        if (item.battery_days) specs.push(`${item.battery_days}d Battery`);
+        break;
+      case 'drones':
+        if (item.drone_type) specs.push(item.drone_type);
+        if (item.camera_resolution_mp) specs.push(`${item.camera_resolution_mp}MP Camera`);
+        if (item.flight_time_minutes) specs.push(`${item.flight_time_minutes}min Flight`);
+        break;
+    }
+    
+    return specs.join(' · ') || 'General product specs';
+  }
+
+  function cardClick(e, type, id) {
+    // Don't navigate if they clicked the Add to Cart button
+    if (e.target.closest('.add-cart-btn')) return;
+    window.location.href = `/products/${type}/${id}/`;
+  }
+
+  // ── Brand Chips ────────────────────────────────────────────────
+  function buildBrandChips(items) {
+    const brands = [...new Set(items.map(i => i.brand).filter(Boolean))].sort();
+    const container = document.getElementById('brand-chips');
+    container.innerHTML = `<span class="chip ${filters.brand===''?'selected':''}" onclick="setFilter('brand','')" id="chip-brand-all">All</span>`;
+    brands.forEach(b => {
+      const chip = document.createElement('span');
+      chip.className = 'chip' + (filters.brand===b?' selected':'');
+      chip.textContent = b;
+      chip.onclick = () => setFilter('brand', b);
+      container.appendChild(chip);
+    });
+  }
+
+  // ── Filter helpers ─────────────────────────────────────────────
+  function setFilter(key, value) {
+    filters[key] = value;
+    // Update chip UI
+    if (key === 'item_type') {
+      ['', ...Object.keys(ITEM_TYPE_META)].forEach(v => {
+        const id = v === '' ? 'chip-all' : `chip-${v}`;
+        document.getElementById(id)?.classList.toggle('selected', v === value);
+      });
+      updateSectionTitle(value);
+    }
+    if (key === 'in_stock') {
+      document.getElementById('chip-stock-all')?.classList.toggle('selected', value === '');
+      document.getElementById('chip-in-stock')?.classList.toggle('selected', value === '1');
+    }
+    loadProducts();
+  }
+
+  function updateSectionTitle(type) {
+    const titles = {
+      '': 'All Products',
+      computers: '💻 Computers',
+      mobiles: '📱 Smartphones',
+      tablets: '🧾 Tablets',
+      smartwatches: '⌚ Smartwatches',
+      headphones: '🎧 Headphones',
+      cameras: '� Cameras',
+      gaming_consoles: '� Gaming Consoles',
+      tvs: '📺 TVs',
+      smart_homes: '🏠 Smart Home',
+      fitness_trackers: '� Fitness Trackers',
+      drones: '� Drones',
+    };
+    document.getElementById('section-title').textContent = titles[type] || 'Products';
+  }
+
+  function applySearch() {
+    filters.q = document.getElementById('hero-search-input').value;
+    loadProducts();
+      
+      // Gọi AI Chatbot search
+      if (typeof window.triggerProductAction === 'function' && filters.q) {
+        window.triggerProductAction(filters.q, 'search');
+      }
+    Object.keys(filters).forEach(k => filters[k] = '');
+    document.getElementById('min-price').value = '';
+    document.getElementById('max-price').value = '';
+    document.getElementById('hero-search-input').value = '';
+    document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+    document.getElementById('chip-all')?.classList.add('selected');
+    document.getElementById('chip-brand-all')?.classList.add('selected');
+    document.getElementById('chip-stock-all')?.classList.add('selected');
+    updateSectionTitle('');
+    loadProducts();
+  }
+
+  // ── Add to Cart ────────────────────────────────────────────────
+  async function addToCart(item_type, item_id, price, name) {
+    const token = getToken();
+    if (!token) {
+      showToast('Please sign in to add items to your cart.', true);
+      setTimeout(() => location.href = '/customer/login/', 1200);
+      return;
+    }
+    const cartItemType = PRODUCT_TYPE_TO_CART_TYPE[item_type] || item_type;
+    try {
+      const res = await fetch('/proxy/customer/cart/items/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Customer-Token': token },
+        body: JSON.stringify({ item_type: cartItemType, item_id, quantity: 1 }),
+      });
+      const data = await res.json();
+      if (!res.ok) { showToast(data.error || 'Failed to add item.', true); return; }
+      showToast(`✓ ${name} added to cart!`);
+      refreshCartBadge();
+        
+        // Gọi AI chatbot trigger
+        if (typeof window.triggerProductAction === 'function') {
+            window.triggerProductAction(item_id, 'add_to_cart');
+        }
+    } catch(e) {
+        showToast('Error connecting to server', true);
+    }
+  }
+
+  /* ──────────────────────────────────────────────────────────
+     AI Recommendation widget
+     ────────────────────────────────────────────────────────── */
+  let _currentRecoTab = 'personal';
+
+  function switchRecoTab(tab) {
+    _currentRecoTab = tab;
+    document.getElementById('ai-tab-personal')?.classList.toggle('active', tab === 'personal');
+    document.getElementById('ai-tab-popular')?.classList.toggle('active', tab === 'popular');
+    if (tab === 'personal') loadPersonalizedRecommendations();
+    else loadPopularRecommendations();
+  }
+
+  function refreshCurrentRecoTab() {
+    const btn = document.getElementById('ai-reco-refresh-btn');
+    btn?.classList.add('spinning');
+    const done = () => btn?.classList.remove('spinning');
+    if (_currentRecoTab === 'personal') loadPersonalizedRecommendations().finally(done);
+    else loadPopularRecommendations().finally(done);
+  }
+
+  /* ── Skeleton ── */
+  function showRecoSkeleton(count = 6) {
+    const grid = document.getElementById('ai-reco-grid');
+    grid.innerHTML = Array.from({ length: count }, () => `
+      <div class="ai-reco-skeleton">
+        <div class="ai-skel-img"></div>
+        <div class="ai-skel-body">
+          <div class="ai-skel-line w-40"></div>
+          <div class="ai-skel-line w-80"></div>
+          <div class="ai-skel-line w-60"></div>
+        </div>
+        <div class="ai-skel-btn"></div>
+      </div>`).join('');
+  }
+
+  /* ── Card builder ── */
+  function buildRecoCard(item, index) {
+    const productType = item.product_type || item.category || 'computers';
+    const meta = ITEM_TYPE_META[productType] || { icon: '📦', label: 'Product', badgeClass: 'badge-blue' };
+    const price = new Intl.NumberFormat('en-US', { style:'currency', currency:'USD' }).format(item.price || 0);
+    const itemName  = escHtml(item.name  || 'Unknown');
+    const itemBrand = escHtml(item.brand || '');
+    const inStock   = (item.stock || 0) > 0;
+    const scoreVal  = item.score != null ? item.score.toFixed(2) : null;
+    const cartType  = PRODUCT_TYPE_TO_CART_TYPE[productType] || productType;
+
+    const stockHtml = inStock
+      ? `<span class="ai-reco-stock-ok">✓ ${item.stock}</span>`
+      : `<span class="ai-reco-stock-low">Out of stock</span>`;
+    const scoreHtml = scoreVal
+      ? `<span class="ai-score-badge">★ ${scoreVal}</span>`
+      : '';
+
+    return `
+      <article class="ai-reco-card" style="animation-delay:${index * 55}ms"
+               onclick="if(!event.target.closest('.ai-reco-card-btn')) window.location.href='/products/${productType}/${item.id ?? 0}/'">
+        <div class="ai-reco-card-img">
+          ${meta.icon}
+          ${scoreHtml}
+        </div>
+        <div class="ai-reco-card-body">
+          <div class="ai-reco-card-brand">${itemBrand}</div>
+          <div class="ai-reco-card-name">${itemName}</div>
+          <div class="ai-reco-card-foot">
+            <span class="ai-reco-card-price">${price}</span>
+            ${stockHtml}
+          </div>
+          <button class="ai-reco-card-btn" ${!inStock ? 'disabled' : ''}
+                  onclick="event.stopPropagation(); addToCart('${cartType}', ${item.id ?? 0}, ${item.price || 0}, '${itemName.replace(/'/g,"\\'")}')"
+          >${inStock ? '🛒 Add to Cart' : 'Out of Stock'}</button>
+        </div>
+      </article>`;
+  }
+
+  /* ── Personalized (needs auth token) ── */
+  async function loadPersonalizedRecommendations() {
+    const token   = getToken();
+    const user    = getUser();
+    const summary = document.getElementById('ai-reco-summary');
+    const grid    = document.getElementById('ai-reco-grid');
+
+    if (!token || !user) {
+      // Show guest banner and fall through to popular
+      summary.textContent = 'Sign in to unlock personalised picks. Showing popular products instead.';
+      grid.innerHTML = `
+        <div class="ai-reco-guest" style="grid-column:1/-1">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span><strong>Sign in</strong> to get AI recommendations tailored to your history.
+          <a href="/customer/login/">Sign in now →</a></span>
+        </div>`;
+      // Auto-load popular as fallback
+      _currentRecoTab = 'popular';
+      document.getElementById('ai-tab-personal')?.classList.remove('active');
+      document.getElementById('ai-tab-popular')?.classList.add('active');
+      return loadPopularRecommendations();
+    }
+
+    showRecoSkeleton(6);
+    summary.textContent = 'Analysing your cart and recent orders…';
+
+    try {
+      const res = await fetch('/proxy/ai/recommend/personalized?limit=6', {
+        headers: { 'X-Customer-Token': token },
+      });
+      if (!res.ok) throw new Error('AI service error');
+      const data = await res.json();
+      const items = data.recommendations || [];
+
+      summary.textContent = data.summary?.trim()
+        || `${items.length} products selected just for you.`;
+
+      if (!items.length) {
+        grid.innerHTML = '<p style="color:var(--text-soft);font-size:0.88rem;grid-column:1/-1">No recommendations found. Browse the store to build your profile!</p>';
+        return;
+      }
+      grid.innerHTML = items.map((item, i) => buildRecoCard(item, i)).join('');
+    } catch (e) {
+      summary.textContent = 'Could not load personalised picks. Showing popular products.';
+      _currentRecoTab = 'popular';
+      document.getElementById('ai-tab-personal')?.classList.remove('active');
+      document.getElementById('ai-tab-popular')?.classList.add('active');
+      return loadPopularRecommendations();
+    }
+  }
+
+  /* ── Popular (no auth, uses user_id=1 as seed or current user id) ── */
+  async function loadPopularRecommendations() {
+    const user    = getUser();
+    const userId  = user?.id || 1;
+    const summary = document.getElementById('ai-reco-summary');
+    const grid    = document.getElementById('ai-reco-grid');
+
+    showRecoSkeleton(6);
+    summary.textContent = 'Finding top-rated products…';
+
+    try {
+      const res = await fetch(`/proxy/ai/recommend?user_id=${userId}&limit=6`);
+      if (!res.ok) throw new Error('AI service error');
+      const data = await res.json();
+      const items = data.recommendations || [];
+
+      summary.textContent = items.length
+        ? `${items.length} popular picks across all categories.`
+        : 'No popular products found right now.';
+
+      if (!items.length) {
+        grid.innerHTML = '<p style="color:var(--text-soft);font-size:0.88rem;grid-column:1/-1">No products found. The AI index may still be building.</p>';
+        return;
+      }
+      grid.innerHTML = items.map((item, i) => buildRecoCard(item, i)).join('');
+    } catch (e) {
+      grid.innerHTML = '<p style="color:var(--text-soft);font-size:0.88rem;grid-column:1/-1">Could not reach the AI service.</p>';
+      summary.textContent = '';
+    }
+  }
+
+  function escHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ── Init ──────────────────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('stat-categories').textContent = Object.keys(ITEM_TYPE_META).length;
+    loadProducts();
+    switchRecoTab('personal');   // loads personalized (falls back to popular for guests)
+    updateSectionTitle(filters.item_type);
+    if (filters.item_type) {
+      document.getElementById(`chip-${filters.item_type}`)?.classList.add('selected');
+      document.getElementById('chip-all')?.classList.remove('selected');
+    } else {
+      document.getElementById('chip-all')?.classList.add('selected');
+    }
+    document.getElementById('chip-stock-all')?.classList.add('selected');
+    document.getElementById('chip-brand-all')?.classList.add('selected');
+  });
+</script>
+
+{% endblock %}

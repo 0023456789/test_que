@@ -1,0 +1,162 @@
+{% extends "app/staff_base.html" %}
+{% block title %}Register Staff – TechVault Admin{% endblock %}
+{% block meta_description %}Create a new TechVault staff account for inventory and product management.{% endblock %}
+
+{% block extra_head %}
+<style>
+  .staff-auth-page {
+    min-height: calc(100vh - var(--nav-height));
+    display: flex; align-items: center; justify-content: center;
+    padding: 3rem 1.5rem;
+    background:
+      radial-gradient(ellipse 70% 50% at 80% 20%, rgba(245,158,11,0.07) 0%, transparent 65%),
+      radial-gradient(ellipse 50% 60% at 10% 80%, rgba(239,68,68,0.05) 0%, transparent 65%);
+  }
+  .staff-card {
+    width: 100%; max-width: 480px;
+    background: rgba(13,21,41,0.92);
+    border: 1px solid rgba(245,158,11,0.2);
+    border-radius: var(--radius-lg);
+    padding: 2.5rem;
+    backdrop-filter: blur(24px);
+    box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+  }
+  .staff-header { text-align: center; margin-bottom: 2rem; }
+  .staff-icon {
+    width: 64px; height: 64px;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    border-radius: var(--radius-md);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.8rem; margin: 0 auto 1.2rem;
+    box-shadow: 0 8px 24px rgba(245,158,11,0.35);
+  }
+  .staff-badge {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.3);
+    border-radius: 99px; padding: 0.2rem 0.85rem;
+    font-size: 0.72rem; font-weight: 700; color: #fbbf24;
+    letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 0.85rem;
+  }
+  .staff-title { font-size: 1.7rem; font-weight: 800; margin-bottom: 0.3rem; }
+  .staff-subtitle { color: var(--text-secondary); font-size: 0.9rem; }
+  .auth-form { display: flex; flex-direction: column; gap: 1.1rem; }
+
+  .btn-staff {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    border: none; color: #000;
+    padding: 0.8rem; border-radius: var(--radius-sm);
+    font-family: inherit; font-size: 1rem; font-weight: 700;
+    cursor: pointer; transition: var(--transition); width: 100%;
+    display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+  }
+  .btn-staff:hover { opacity: 0.88; transform: translateY(-2px); }
+  .btn-staff:disabled { opacity: 0.5; transform: none; cursor: not-allowed; }
+
+  .staff-links {
+    text-align: center; margin-top: 1.25rem;
+    color: var(--text-secondary); font-size: 0.88rem;
+  }
+  .staff-links a { color: #fbbf24; text-decoration: none; font-weight: 600; }
+  .staff-links a:hover { text-decoration: underline; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="staff-auth-page" id="staff-page">
+  <div class="staff-card">
+    <div class="staff-header">
+      <div class="staff-badge">⚙️ Admin Portal</div>
+      <div class="staff-icon">👤</div>
+      <h1 class="staff-title">Register Staff</h1>
+      <p class="staff-subtitle">Create a new TechVault staff account</p>
+    </div>
+
+    <div id="alert-error" class="alert alert-error" style="margin-bottom:1rem;">
+      <span>⚠</span><span id="alert-msg"></span>
+    </div>
+    <div id="alert-success" class="alert alert-success" style="margin-bottom:1rem;">
+      <span>✓</span><span id="alert-ok-msg"></span>
+    </div>
+
+    <form class="auth-form" id="staff-register-form" onsubmit="handleStaffRegister(event)">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="full_name">Full Name</label>
+          <input class="form-input" type="text" id="full_name" placeholder="Jane Smith" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="username">Username</label>
+          <input class="form-input" type="text" id="username" placeholder="janesmith" required />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="email">Email Address</label>
+        <input class="form-input" type="email" id="email" placeholder="jane@techvault.com" required />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="password">Password</label>
+        <input class="form-input" type="password" id="password" placeholder="Create a strong password" required />
+      </div>
+
+      <button type="submit" class="btn-staff" id="submit-btn" style="margin-top:0.5rem;">
+        ✅ Create Staff Account
+      </button>
+    </form>
+
+    <div class="staff-links">
+      Already have an account? <a href="/staff/login/" id="login-link">Sign in →</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  async function handleStaffRegister(e) {
+    e.preventDefault();
+    const btn      = document.getElementById('submit-btn');
+    const errAlert = document.getElementById('alert-error');
+    const okAlert  = document.getElementById('alert-success');
+    const errMsg   = document.getElementById('alert-msg');
+    const okMsg    = document.getElementById('alert-ok-msg');
+
+    errAlert.classList.remove('visible');
+    okAlert.classList.remove('visible');
+
+    const full_name = document.getElementById('full_name').value.trim();
+    const username  = document.getElementById('username').value.trim();
+    const email     = document.getElementById('email').value.trim();
+    const password  = document.getElementById('password').value;
+
+    if (!full_name || !username || !email || !password) {
+      errMsg.textContent = 'Please fill in all fields.';
+      errAlert.classList.add('visible'); return;
+    }
+
+    btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Creating account…';
+
+    try {
+      const res = await fetch('/proxy/staff/staff/register/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ full_name, username, email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        errMsg.textContent = data.error || 'Registration failed.';
+        errAlert.classList.add('visible');
+        btn.disabled = false; btn.innerHTML = '✅ Create Staff Account'; return;
+      }
+      okMsg.textContent = 'Staff account created! Redirecting to login…';
+      okAlert.classList.add('visible');
+      setTimeout(() => location.href = '/staff/login/', 1200);
+    } catch(err) {
+      errMsg.textContent = 'Network error. Please try again.';
+      errAlert.classList.add('visible');
+      btn.disabled = false; btn.innerHTML = '✅ Create Staff Account';
+    }
+  }
+</script>
+{% endblock %}

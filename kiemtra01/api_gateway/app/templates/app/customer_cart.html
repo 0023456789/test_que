@@ -1,0 +1,263 @@
+{% extends "app/base.html" %}
+{% block title %}My Cart – TechVault{% endblock %}
+{% block meta_description %}Review the items in your TechVault shopping cart and proceed to checkout.{% endblock %}
+
+{% block extra_head %}
+<style>
+  .cart-page { max-width: 1240px; margin: 0 auto; padding: 3rem 2rem 2rem; }
+  .cart-layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 1.5rem; align-items: start; }
+  .cart-items-card {
+    overflow: hidden;
+    border-radius: 24px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.86);
+    box-shadow: var(--shadow-soft);
+  }
+  .cart-item-header {
+    display: grid;
+    grid-template-columns: 1fr 110px 130px 44px;
+    gap: 1rem;
+    padding: 0.85rem 1.25rem;
+    background: rgba(15,23,42,0.03);
+    border-bottom: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 0.76rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .cart-item-row {
+    display: grid;
+    grid-template-columns: 1fr 110px 130px 44px;
+    gap: 1rem;
+    padding: 1.1rem 1.25rem;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+    transition: background var(--transition);
+  }
+  .cart-item-row:last-child { border-bottom: none; }
+  .cart-item-row:hover { background: rgba(15,98,254,0.03); }
+  .cart-item-info { display: flex; align-items: center; gap: 0.9rem; }
+  .cart-item-icon {
+    width: 54px; height: 54px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 18px;
+    background: linear-gradient(135deg, rgba(15,98,254,0.12), rgba(245,158,11,0.12));
+    font-size: 1.55rem;
+  }
+  .cart-item-name { font-size: 0.96rem; font-weight: 800; margin-bottom: 0.15rem; }
+  .cart-item-type { font-size: 0.8rem; color: var(--text-muted); }
+  .qty-control { display: inline-flex; align-items: center; gap: 0.55rem; }
+  .qty-btn {
+    width: 30px; height: 30px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.9);
+    color: var(--text);
+    cursor: pointer;
+    transition: transform var(--transition), border-color var(--transition), background var(--transition);
+  }
+  .qty-btn:hover { transform: translateY(-1px); border-color: rgba(15,98,254,0.22); background: #fff; }
+  .qty-value { min-width: 24px; text-align: center; font-weight: 800; }
+  .line-total { font-weight: 800; color: var(--text); }
+  .remove-btn {
+    border: none; background: transparent; color: var(--text-muted);
+    cursor: pointer; padding: 0.2rem; border-radius: 10px; transition: var(--transition);
+  }
+  .remove-btn:hover { color: var(--danger); background: rgba(214,69,69,0.08); }
+  .order-summary {
+    position: sticky; top: calc(var(--nav-height) + 1rem);
+    padding: 1.3rem;
+    border-radius: 24px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.88);
+    box-shadow: var(--shadow-soft);
+  }
+  .summary-title { margin: 0 0 1.1rem; font-size: 1.05rem; font-weight: 800; font-family: 'Space Grotesk', sans-serif; }
+  .summary-row { display: flex; justify-content: space-between; align-items: center; padding: 0.55rem 0; font-size: 0.93rem; }
+  .summary-row .label { color: var(--text-muted); }
+  .summary-row.total { margin-top: 0.6rem; padding-top: 0.95rem; border-top: 1px solid var(--border); font-weight: 900; font-size: 1.08rem; }
+  .summary-row.total .amount { color: var(--text); }
+  .summary-badges { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-bottom: 1.1rem; }
+  .empty-state {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 5rem 2rem; text-align: center; gap: 1rem; color: var(--text-soft);
+  }
+  .empty-icon { font-size: 4rem; }
+  .empty-title { font-size: 1.35rem; font-weight: 800; color: var(--text); }
+  @media (max-width: 900px) {
+    .cart-layout { grid-template-columns: 1fr; }
+    .order-summary { position: static; }
+  }
+  @media (max-width: 650px) {
+    .cart-item-header { display: none; }
+    .cart-item-row { grid-template-columns: 1fr auto; grid-template-rows: auto auto; }
+    .cart-item-info { grid-column: 1; }
+    .qty-control { grid-column: 1; }
+    .line-total { grid-column: 2; align-self: center; }
+    .remove-btn { grid-column: 2; justify-self: end; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="cart-page">
+  <div style="margin-bottom:2rem;">
+    <h1 class="page-title">🛒 Shopping Cart</h1>
+    <p class="page-subtitle" id="cart-subtitle">Loading your cart…</p>
+  </div>
+
+  <!-- Auth guard -->
+  <div id="auth-prompt" class="hidden">
+    <div class="empty-state">
+      <div class="empty-icon">🔐</div>
+      <p class="empty-title">Sign In Required</p>
+      <p>Please sign in to view your cart.</p>
+      <a href="/customer/login/" class="btn btn-primary" id="sign-in-link">Sign In</a>
+    </div>
+  </div>
+
+  <!-- Cart content -->
+  <div id="cart-content" class="hidden">
+    <div class="cart-layout">
+      <!-- Items -->
+      <div>
+        <div id="alert-area" style="margin-bottom:1rem;"></div>
+        <div class="cart-items-card" id="cart-items-wrap">
+          <!-- JS rendered -->
+        </div>
+      </div>
+
+      <!-- Summary -->
+      <aside class="order-summary" id="order-summary">
+        <p class="summary-title">Order Summary</p>
+
+        <div class="summary-badges">
+          <span class="badge badge-green">🚚 Free Shipping</span>
+          <span class="badge badge-blue">🔒 Secure Checkout</span>
+        </div>
+
+        <div class="summary-row"><span class="label">Subtotal</span><span id="summary-subtotal">–</span></div>
+        <div class="summary-row"><span class="label">Shipping</span><span style="color:var(--success)">Free</span></div>
+        <div class="summary-row total">
+          <span>Total</span><span class="amount" id="summary-total">–</span>
+        </div>
+
+        <a href="/customer/checkout/" class="btn btn-success btn-full btn-lg" id="checkout-btn" style="margin-top:1.25rem;">
+          Checkout →
+        </a>
+        <a href="/customer/browse/" class="btn btn-secondary btn-full" id="continue-btn" style="margin-top:0.75rem;">
+          Continue Shopping
+        </a>
+      </aside>
+    </div>
+  </div>
+
+  <!-- Empty cart -->
+  <div id="empty-state" class="hidden">
+    <div class="empty-state">
+      <div class="empty-icon">🛒</div>
+      <p class="empty-title">Your cart is empty</p>
+      <p>Add some amazing electronics to your cart!</p>
+      <a href="/customer/browse/" class="btn btn-primary" id="browse-btn" style="margin-top:0.5rem;">Browse Products</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  let cartData = null;
+
+  function fmt(price) {
+    return new Intl.NumberFormat('en-US', { style:'currency', currency:'USD' }).format(price);
+  }
+
+  function showSection(id) {
+    ['auth-prompt','cart-content','empty-state'].forEach(s =>
+      document.getElementById(s).classList.toggle('hidden', s !== id)
+    );
+  }
+
+  async function loadCart() {
+    const token = getToken();
+    if (!token) { showSection('auth-prompt'); return; }
+
+    try {
+      const res = await fetch('/proxy/customer/cart/current/', {
+        headers: { 'X-Customer-Token': token }
+      });
+      if (res.status === 401) { showSection('auth-prompt'); return; }
+      const data = await res.json();
+      cartData = data.cart;
+
+      if (!cartData || cartData.items.length === 0) {
+        document.getElementById('cart-subtitle').textContent = 'Your cart is empty.';
+        showSection('empty-state'); return;
+      }
+
+      renderCart(cartData);
+      showSection('cart-content');
+      refreshCartBadge();
+    } catch(e) {
+      document.getElementById('cart-items-wrap').innerHTML =
+        `<div class="empty-state"><p>Failed to load cart. Please try again.</p></div>`;
+      showSection('cart-content');
+    }
+  }
+
+  function renderCart(cart) {
+    document.getElementById('cart-subtitle').textContent =
+      `${cart.items.length} item${cart.items.length !== 1 ? 's' : ''} in your cart`;
+
+    const wrap = document.getElementById('cart-items-wrap');
+    wrap.innerHTML = `
+      <div class="cart-item-header">
+        <span>Product</span><span>Qty</span><span>Line Total</span><span></span>
+      </div>
+      ${cart.items.map(item => `
+        <div class="cart-item-row" id="item-row-${item.id}">
+          <div class="cart-item-info">
+            <div class="cart-item-icon">${item.item_type === 'computer' ? '💻' : '📱'}</div>
+            <div>
+              <p class="cart-item-name">${escHtml(item.item_name)}</p>
+              <p class="cart-item-type">${item.item_type === 'computer' ? 'Computer' : 'Smartphone'} · ${fmt(item.unit_price)} each</p>
+            </div>
+          </div>
+          <div class="qty-control">
+            <button class="qty-btn" onclick="updateQty(${item.id}, ${item.quantity - 1}, '${item.item_type}', ${item.item_id})">−</button>
+            <span class="qty-value">${item.quantity}</span>
+            <button class="qty-btn" onclick="updateQty(${item.id}, ${item.quantity + 1}, '${item.item_type}', ${item.item_id})">+</button>
+          </div>
+          <span class="line-total">${fmt(item.line_total)}</span>
+          <button class="remove-btn" onclick="removeItem(${item.id})" title="Remove item">🗑</button>
+        </div>
+      `).join('')}
+    `;
+
+    const total = fmt(cart.total_amount);
+    document.getElementById('summary-subtotal').textContent = total;
+    document.getElementById('summary-total').textContent = total;
+  }
+
+  async function updateQty(cartItemId, newQty, itemType, itemId) {
+    if (newQty <= 0) { removeItem(cartItemId); return; }
+    // Re-add the item with adjusted quantity is not directly supported,
+    // but we can remove & re-add (simplified by just removing for now)
+    alert('Quantity change: please remove and re-add the item with desired quantity.');
+  }
+
+  async function removeItem(cartItemId) {
+    // The API does not expose a remove-item endpoint in the current spec,
+    // so we show a friendly note.
+    alert('To remove an item, please proceed to checkout and adjust there, or clear your cart by placing an order.');
+  }
+
+  function escHtml(str) {
+    return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  document.addEventListener('DOMContentLoaded', loadCart);
+</script>
+{% endblock %}

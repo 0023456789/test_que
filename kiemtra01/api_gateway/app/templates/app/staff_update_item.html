@@ -1,0 +1,582 @@
+{% extends "app/staff_base.html" %}
+{% block title %}Update Item – TechVault Staff{% endblock %}
+{% block meta_description %}Update existing product details, pricing, and stock in the TechVault inventory.{% endblock %}
+
+{% block extra_head %}
+<style>
+  .staff-layout {
+    display: grid;
+    grid-template-columns: 260px minmax(0, 1fr);
+    min-height: 100vh;
+  }
+  .staff-sidebar {
+    background: linear-gradient(180deg, rgba(10,16,27,0.98), rgba(7,11,18,0.98));
+    border-right: 1px solid rgba(255,255,255,0.06);
+    padding: 1.5rem 0;
+    position: sticky; top: 0;
+    height: 100vh; overflow-y: auto;
+    box-shadow: inset -1px 0 0 rgba(255,255,255,0.03);
+  }
+  .sidebar-section { padding: 0 0.85rem; margin-bottom: 1.5rem; }
+  .sidebar-label {
+    font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.08em; color: var(--text-muted);
+    padding: 0 0.75rem; margin-bottom: 0.65rem;
+  }
+  .sidebar-link {
+    display: flex; align-items: center; gap: 0.7rem;
+    padding: 0.65rem 0.85rem; border-radius: var(--radius-sm);
+    text-decoration: none; color: var(--text-secondary);
+    font-size: 0.88rem; font-weight: 500;
+    transition: var(--transition); margin-bottom: 0.2rem;
+  }
+  .sidebar-link:hover { background: rgba(255,255,255,0.05); color: var(--text-primary); }
+  .sidebar-link.active { background: linear-gradient(135deg, rgba(245,158,11,0.15), rgba(245,158,11,0.08)); color: #ffd47a; border: 1px solid rgba(245,158,11,0.22); }
+  .sidebar-icon { font-size: 1rem; flex-shrink: 0; }
+  .sidebar-user { padding: 1rem 1.25rem; border-top: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.02); }
+  .sidebar-user-name { font-size: 0.88rem; font-weight: 600; color: var(--text-primary); }
+  .sidebar-user-role { font-size: 0.75rem; color: #fbbf24; }
+
+  .staff-main {
+    padding: 2rem;
+    background:
+      radial-gradient(circle at top right, rgba(245,158,11,0.08), transparent 30%),
+      radial-gradient(circle at 20% 20%, rgba(16,185,129,0.05), transparent 24%);
+  }
+  .staff-page-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 360px;
+    gap: 1rem;
+    align-items: stretch;
+    margin-bottom: 1.4rem;
+  }
+  .hero-panel,
+  .signal-panel {
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 24px;
+    background: rgba(11,17,28,0.74);
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(14px);
+  }
+  .hero-panel {
+    padding: 1.4rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  .hero-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    width: fit-content;
+    padding: 0.32rem 0.8rem;
+    border-radius: 999px;
+    background: rgba(245,158,11,0.1);
+    border: 1px solid rgba(245,158,11,0.18);
+    color: #ffd47a;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .staff-page-title {
+    margin: 0;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(1.9rem, 3vw, 2.7rem);
+    line-height: 1;
+    letter-spacing: -0.05em;
+  }
+  .staff-page-sub { color: var(--text-secondary); font-size: 0.94rem; max-width: 60ch; }
+  .signal-panel {
+    padding: 1rem;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+  .signal-card {
+    padding: 0.95rem;
+    border-radius: 18px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.05);
+  }
+  .signal-label { font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.35rem; }
+  .signal-value { font-family: 'Space Grotesk', sans-serif; font-size: 1.05rem; font-weight: 700; color: #fff; }
+  .signal-sub { margin-top: 0.2rem; font-size: 0.8rem; color: var(--text-secondary); }
+
+  .update-card {
+    max-width: 1100px;
+    border-radius: 28px;
+    background: linear-gradient(180deg, rgba(13,21,35,0.96), rgba(8,14,23,0.96));
+    border: 1px solid rgba(255,255,255,0.08);
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+  }
+  .editor-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 290px;
+    gap: 1.25rem;
+    align-items: start;
+  }
+  .editor-shell,
+  .diag-shell {
+    border-radius: 22px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.06);
+    padding: 1.25rem;
+  }
+  .diag-shell { position: sticky; top: 1.25rem; }
+  .diag-card {
+    padding: 0.95rem;
+    border-radius: 18px;
+    margin-bottom: 0.8rem;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.05);
+  }
+  .diag-label { font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.35rem; }
+  .diag-value { font-family: 'Space Grotesk', sans-serif; font-size: 1rem; font-weight: 700; color: #fff; }
+  .diag-sub { margin-top: 0.2rem; font-size: 0.8rem; color: var(--text-secondary); }
+
+  /* Lookup section */
+  .lookup-row {
+    display: grid; grid-template-columns: 1fr 1fr auto; gap: 1rem; align-items: end;
+    margin-bottom: 1.5rem;
+  }
+  .btn-lookup {
+    background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.3);
+    color: #ffd47a; padding: 0.7rem 1.25rem; border-radius: var(--radius-sm);
+    font-family: inherit; font-size: 0.92rem; font-weight: 600;
+    cursor: pointer; transition: var(--transition); white-space: nowrap;
+  }
+  .btn-lookup:hover { background: rgba(245,158,11,0.25); }
+  .btn-lookup:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* Current item display */
+  .current-item {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.08); border-radius: var(--radius-sm);
+    padding: 1rem 1.25rem; margin-bottom: 1.5rem;
+    display: none;
+  }
+  .current-item.visible { display: block; }
+  .current-item-title { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.6rem; }
+  .current-item-name { font-size: 1rem; font-weight: 700; margin-bottom: 0.15rem; }
+  .current-item-meta { font-size: 0.82rem; color: var(--text-secondary); }
+
+  /* Edit tabs */
+  .tab-bar {
+    display: flex; gap: 0.25rem; margin-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 0;
+  }
+  .tab-btn {
+    background: none; border: none; border-bottom: 2px solid transparent;
+    color: var(--text-muted); font-family: inherit; font-size: 0.88rem; font-weight: 600;
+    padding: 0.6rem 1rem; cursor: pointer; margin-bottom: -1px;
+    transition: var(--transition);
+  }
+  .tab-btn:hover { color: var(--text-secondary); }
+  .tab-btn.active { color: #ffd47a; border-bottom-color: #ffd47a; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  .form-fields { display: flex; flex-direction: column; gap: 1rem; }
+
+  .section-divider {
+    font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.07em; color: var(--text-muted);
+    margin: 1.25rem 0 0.8rem;
+    display: flex; align-items: center; gap: 0.6rem;
+  }
+  .section-divider::after { content: ''; flex: 1; border-top: 1px solid var(--border); }
+
+  .btn-amber {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    border: none; color: #111827;
+    padding: 0.75rem 2rem; border-radius: var(--radius-sm);
+    font-family: inherit; font-size: 0.95rem; font-weight: 700;
+    cursor: pointer; transition: var(--transition);
+    display: inline-flex; align-items: center; gap: 0.5rem;
+  }
+  .btn-amber:hover { opacity: 0.92; transform: translateY(-2px); box-shadow: 0 12px 24px rgba(245,158,11,0.25); }
+  .btn-amber:disabled { opacity: 0.5; transform: none; cursor: not-allowed; }
+
+  .not-found-note {
+    background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2);
+    border-radius: var(--radius-sm); padding: 0.75rem 1rem;
+    color: #f87171; font-size: 0.88rem; display: none;
+  }
+  .not-found-note.visible { display: block; }
+
+  @media (max-width: 800px) {
+    .staff-layout { grid-template-columns: 1fr; }
+    .staff-sidebar { display: none; }
+    .staff-page-header { grid-template-columns: 1fr; }
+    .editor-grid { grid-template-columns: 1fr; }
+    .diag-shell { position: static; }
+    .lookup-row { grid-template-columns:1fr 1fr; }
+    .lookup-row .btn-lookup { grid-column: 1/-1; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="staff-layout">
+  <!-- Sidebar -->
+  <nav class="staff-sidebar">
+    <div class="sidebar-section">
+      <div style="padding:0 0.75rem; margin-bottom:1.5rem;">
+        <div style="display:flex;align-items:center;gap:0.6rem; margin-bottom:0.25rem;">
+          <span style="font-size:1.2rem;">⚙️</span>
+          <span style="font-weight:800; font-size:1rem;">Staff Panel</span>
+        </div>
+        <span class="badge badge-yellow">Admin</span>
+      </div>
+      <p class="sidebar-label">Inventory</p>
+      <a href="/staff/import/computer/" class="sidebar-link" id="link-import-pc">
+        <span class="sidebar-icon">💻</span> Import Computer
+      </a>
+      <a href="/staff/import/mobile/" class="sidebar-link" id="link-import-phone">
+        <span class="sidebar-icon">📱</span> Import Mobile
+      </a>
+      <a href="/staff/update/" class="sidebar-link active" id="link-update">
+        <span class="sidebar-icon">✏️</span> Update Item
+      </a>
+    </div>
+    <div class="sidebar-section">
+      <p class="sidebar-label">Account</p>
+      <a href="/staff/register/" class="sidebar-link" id="link-reg-staff">
+        <span class="sidebar-icon">👤</span> Register Staff
+      </a>
+      <a href="/staff/login/" class="sidebar-link" id="link-logout-staff" onclick="staffLogout(); return false;">
+        <span class="sidebar-icon">🚪</span> Logout
+      </a>
+    </div>
+    <div class="sidebar-user" id="sidebar-user"></div>
+  </nav>
+
+  <!-- Main -->
+  <main class="staff-main">
+    <div class="staff-page-header">
+      <div class="hero-panel">
+        <div class="hero-kicker">Inventory command center</div>
+        <div>
+          <h1 class="staff-page-title">Update Item</h1>
+          <p class="staff-page-sub">Look up a product by type and ID, then edit it inside a split diagnostics workspace.</p>
+        </div>
+      </div>
+      <div class="signal-panel">
+        <div class="signal-card"><div class="signal-label">Mode</div><div class="signal-value">Update</div><div class="signal-sub">Operational editor</div></div>
+        <div class="signal-card"><div class="signal-label">Scope</div><div class="signal-value">Item ID</div><div class="signal-sub">Fetch by type</div></div>
+        <div class="signal-card"><div class="signal-label">State</div><div class="signal-value">Protected</div><div class="signal-sub">Staff-only workflow</div></div>
+        <div class="signal-card"><div class="signal-label">Focus</div><div class="signal-value">Patch</div><div class="signal-sub">Live edits + refresh</div></div>
+      </div>
+    </div>
+
+    <div id="alert-error" class="alert alert-error" style="margin-bottom:1.25rem;">
+      <span>⚠</span><span id="alert-msg"></span>
+    </div>
+    <div id="alert-success" class="alert alert-success" style="margin-bottom:1.25rem;">
+      <span>✓</span><span id="alert-ok-msg"></span>
+    </div>
+
+    <div class="update-card">
+      <div class="editor-grid">
+        <div class="editor-shell">
+          <p class="section-divider" style="margin-top:0;">Find Item</p>
+          <div class="lookup-row">
+            <div class="form-group">
+              <label class="form-label" for="item-type">Item Type</label>
+              <select class="form-select" id="item-type" onchange="onTypeChange()">
+                <option value="computer">Computer</option>
+                <option value="mobile">Mobile</option>
+                <option value="tablet">Tablet</option>
+                <option value="monitor">Monitor</option>
+                <option value="keyboard">Keyboard</option>
+                <option value="mouse">Mouse</option>
+                <option value="headphone">Headphone</option>
+                <option value="speaker">Speaker</option>
+                <option value="camera">Camera</option>
+                <option value="printer">Printer</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="item-id">Item ID</label>
+              <input class="form-input" type="number" id="item-id" placeholder="e.g. 42" min="1" step="1"
+                     onkeydown="if(event.key==='Enter') lookupItem()" />
+            </div>
+            <button class="btn-lookup" onclick="lookupItem()" id="lookup-btn">🔍 Fetch</button>
+          </div>
+
+          <div class="not-found-note" id="not-found-note">Item not found. Please check the type and ID.</div>
+
+          <div class="current-item" id="current-item-display">
+            <p class="current-item-title">Current Data</p>
+            <p class="current-item-name" id="ci-name">–</p>
+            <p class="current-item-meta" id="ci-meta">–</p>
+          </div>
+
+          <div id="edit-section" style="display:none;">
+            <p class="section-divider">Edit Fields</p>
+
+            <div class="tab-bar">
+              <button class="tab-btn active" onclick="switchTab('basic', this)" id="tab-basic">Basic Info</button>
+              <button class="tab-btn" onclick="switchTab('specs', this)" id="tab-specs">Specs</button>
+              <button class="tab-btn" onclick="switchTab('pricing', this)" id="tab-pricing">Price & Stock</button>
+            </div>
+
+            <div class="tab-panel active form-fields" id="panel-basic">
+              <div class="form-group">
+                <label class="form-label" for="u-name">Product Name</label>
+                <input class="form-input" type="text" id="u-name" placeholder="Product name" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="u-brand">Brand</label>
+                <input class="form-input" type="text" id="u-brand" placeholder="Brand" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="u-description">Description</label>
+                <textarea class="form-textarea" id="u-description" rows="3" placeholder="Description"></textarea>
+              </div>
+            </div>
+
+            <div class="tab-panel form-fields" id="panel-specs">
+              <div id="spec-cpu-group" class="form-group">
+                <label class="form-label" for="u-cpu">CPU / Chipset</label>
+                <input class="form-input" type="text" id="u-cpu" placeholder="Processor model" />
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label" for="u-ram">RAM (GB)</label>
+                  <input class="form-input" type="number" id="u-ram" placeholder="16" min="1" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="u-storage">Storage (GB)</label>
+                  <input class="form-input" type="number" id="u-storage" placeholder="512" min="1" />
+                </div>
+              </div>
+            </div>
+
+            <div class="tab-panel form-fields" id="panel-pricing">
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label" for="u-price">Price (USD)</label>
+                  <input class="form-input" type="number" id="u-price" placeholder="999.99" min="0" step="0.01" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="u-stock">Stock</label>
+                  <input class="form-input" type="number" id="u-stock" placeholder="50" min="0" />
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="u-active">Active / Visible</label>
+                <select class="form-select" id="u-active">
+                  <option value="true">✓ Active (visible in store)</option>
+                  <option value="false">✗ Inactive (hidden)</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="display:flex; gap:1rem; margin-top:1.5rem; flex-wrap:wrap;">
+              <button class="btn-amber" onclick="handleUpdate()" id="update-btn">💾 Save Changes</button>
+              <button class="btn btn-secondary" onclick="clearEdit()" id="clear-btn">Cancel</button>
+            </div>
+          </div>
+        </div>
+        <aside class="diag-shell">
+          <div class="diag-card"><div class="diag-label">Record</div><div class="diag-value" id="diag-record">Waiting</div><div class="diag-sub" id="diag-record-sub">Fetch an item to begin</div></div>
+          <div class="diag-card"><div class="diag-label">Type</div><div class="diag-value" id="diag-type">Computer</div><div class="diag-sub">Switch to mobile when needed</div></div>
+          <div class="diag-card"><div class="diag-label">State</div><div class="diag-value" id="diag-state">Idle</div><div class="diag-sub">No item loaded yet</div></div>
+          <div class="diag-card"><div class="diag-label">Next step</div><div class="diag-value">Patch</div><div class="diag-sub">Use the tabs to edit fields</div></div>
+        </aside>
+      </div>
+    </div>
+  </main>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  function getStaffToken() { return localStorage.getItem('tv_staff_token'); }
+  function getStaffUser()  { try { return JSON.parse(localStorage.getItem('tv_staff_user')); } catch(e) { return null; } }
+  function staffLogout()   { localStorage.removeItem('tv_staff_token'); localStorage.removeItem('tv_staff_user'); location.href='/staff/login/'; }
+
+  let currentItem = null;
+  let currentType = 'computer';
+  let currentId   = null;
+
+  function switchTab(name, btn) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-' + name).classList.add('active');
+  }
+
+  function onTypeChange() {
+    currentType = document.getElementById('item-type').value;
+    const cpuLabel = document.querySelector('label[for="u-cpu"]');
+    if (cpuLabel) cpuLabel.textContent = currentType === 'computer' ? 'CPU / Processor' : 'Chipset / SoC';
+    document.getElementById('diag-type').textContent = currentType.charAt(0).toUpperCase() + currentType.slice(1);
+  }
+
+  function showErr(msg) {
+    const el = document.getElementById('alert-error');
+    document.getElementById('alert-msg').textContent = msg;
+    el.classList.add('visible');
+    document.getElementById('alert-success').classList.remove('visible');
+  }
+  function showOk(msg) {
+    const el = document.getElementById('alert-success');
+    document.getElementById('alert-ok-msg').textContent = msg;
+    el.classList.add('visible');
+    document.getElementById('alert-error').classList.remove('visible');
+  }
+  function clearAlerts() {
+    document.getElementById('alert-error').classList.remove('visible');
+    document.getElementById('alert-success').classList.remove('visible');
+  }
+
+  async function lookupItem() {
+    const token = getStaffToken();
+    if (!token) { location.href = '/staff/login/'; return; }
+
+    const type    = document.getElementById('item-type').value;
+    const idVal   = document.getElementById('item-id').value;
+    const btn     = document.getElementById('lookup-btn');
+    const notFound = document.getElementById('not-found-note');
+
+    if (!idVal) { showErr('Please enter an item ID.'); return; }
+
+    clearAlerts();
+    notFound.classList.remove('visible');
+    btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+
+    const path = `products/${idVal}/`;
+    const service = type;
+
+    try {
+      const res = await fetch(`/proxy/${service}/${path}`, {
+        headers: { 'X-Staff-Token': token }
+      });
+
+      if (res.status === 404) {
+        notFound.classList.add('visible');
+        document.getElementById('current-item-display').classList.remove('visible');
+        document.getElementById('edit-section').style.display = 'none';
+        btn.disabled = false; btn.textContent = '🔍 Fetch';
+        return;
+      }
+
+      const data = await res.json();
+      const item = data.item || data;
+      currentItem = item;
+      currentType = type;
+      currentId   = idVal;
+      document.getElementById('diag-record').textContent = `#${idVal}`;
+      document.getElementById('diag-record-sub').textContent = `${item.brand || 'Unknown'} ${item.name || ''}`.trim();
+      document.getElementById('diag-state').textContent = 'Loaded';
+
+      // Fill display
+      const fmt = p => new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(p);
+      const cpuOrChipset = item.cpu_or_chipset;
+      document.getElementById('ci-name').textContent = `${item.name} — ${item.brand}`;
+      document.getElementById('ci-meta').textContent =
+        `${cpuOrChipset} · ${item.ram_gb}GB RAM · ${item.storage_gb}GB Storage · ${fmt(item.price)} · Stock: ${item.stock}`;
+      document.getElementById('current-item-display').classList.add('visible');
+
+      // Pre-fill form
+      document.getElementById('u-name').value   = item.name || '';
+      document.getElementById('u-brand').value  = item.brand || '';
+      document.getElementById('u-description').value = item.description || '';
+      document.getElementById('u-cpu').value    = cpuOrChipset || '';
+      document.getElementById('u-ram').value    = item.ram_gb || '';
+      document.getElementById('u-storage').value = item.storage_gb || '';
+      document.getElementById('u-price').value  = item.price || '';
+      document.getElementById('u-stock').value  = item.stock || '';
+      document.getElementById('u-active').value = item.is_active ? 'true' : 'false';
+
+      document.getElementById('edit-section').style.display = 'block';
+      document.getElementById('current-item-display').classList.add('visible');
+    } catch(e) {
+      showErr('Failed to fetch item. Check that services are running.');
+    }
+
+    btn.disabled = false; btn.textContent = '🔍 Fetch';
+  }
+
+  function clearEdit() {
+    document.getElementById('edit-section').style.display = 'none';
+    document.getElementById('current-item-display').classList.remove('visible');
+    document.getElementById('item-id').value = '';
+    currentItem = null;
+    document.getElementById('diag-record').textContent = 'Waiting';
+    document.getElementById('diag-record-sub').textContent = 'Fetch an item to begin';
+    document.getElementById('diag-state').textContent = 'Idle';
+  }
+
+  async function handleUpdate() {
+    const token = getStaffToken();
+    if (!token) { location.href = '/staff/login/'; return; }
+    if (!currentId) { showErr('No item loaded.'); return; }
+
+    const btn = document.getElementById('update-btn');
+    clearAlerts();
+    btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Saving…';
+
+    const payload = {
+      name:        document.getElementById('u-name').value.trim() || undefined,
+      brand:       document.getElementById('u-brand').value.trim() || undefined,
+      description: document.getElementById('u-description').value || undefined,
+      cpu_or_chipset: document.getElementById('u-cpu').value.trim() || undefined,
+      ram_gb:      document.getElementById('u-ram').value ? parseInt(document.getElementById('u-ram').value) : undefined,
+      storage_gb:  document.getElementById('u-storage').value ? parseInt(document.getElementById('u-storage').value) : undefined,
+      price:       document.getElementById('u-price').value ? parseFloat(document.getElementById('u-price').value) : undefined,
+      stock:       document.getElementById('u-stock').value !== '' ? parseInt(document.getElementById('u-stock').value) : undefined,
+      is_active:   document.getElementById('u-active').value === 'true',
+    };
+    // Remove undefined keys
+    Object.keys(payload).forEach(k => payload[k] === undefined && delete payload[k]);
+
+    const service = currentType;
+    const path    = `products`;
+
+    try {
+      const res = await fetch(`/proxy/staff/staff/items/${currentType}/${currentId}/`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'X-Staff-Token': token },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showErr(data.error || 'Update failed. Please try again.');
+        btn.disabled = false; btn.textContent = '💾 Save Changes'; return;
+      }
+      showOk('Item updated successfully!');
+      document.getElementById('diag-state').textContent = 'Saved';
+      // Re-fetch to refresh display
+      const fetchRes = await fetch(`/proxy/${service}/${path}/${currentId}/`, { headers: {'X-Staff-Token': token} });
+      const fetchData = await fetchRes.json();
+      const item = fetchData.item || fetchData;
+      const fmt = p => new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(p);
+      const cpuOrChipset = item.cpu_or_chipset;
+      document.getElementById('ci-name').textContent = `${item.name} — ${item.brand}`;
+      document.getElementById('ci-meta').textContent =
+        `${cpuOrChipset} · ${item.ram_gb}GB RAM · ${item.storage_gb}GB Storage · ${fmt(item.price)} · Stock: ${item.stock}`;
+    } catch(e) {
+      showErr('Network error. Please try again.');
+    }
+    btn.disabled = false; btn.innerHTML = '💾 Save Changes';
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const token = getStaffToken();
+    if (!token) { location.href = '/staff/login/'; return; }
+    const user = getStaffUser();
+    if (user) {
+      document.getElementById('sidebar-user').innerHTML = `
+        <p class="sidebar-user-name">👤 ${user.full_name || user.username}</p>
+        <p class="sidebar-user-role">Staff Member</p>`;
+    }
+    onTypeChange();
+  });
+</script>
+{% endblock %}

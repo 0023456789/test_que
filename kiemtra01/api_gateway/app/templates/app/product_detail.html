@@ -1,0 +1,929 @@
+{% extends "app/base.html" %}
+{% load static %}
+{% block title %}Product Detail – TechVault Electronics{% endblock %}
+{% block meta_description %}View detailed specifications, pricing, and availability for this product on TechVault Electronics.{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* ── Breadcrumb ─────────────────────────── */
+  .breadcrumb {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 1.25rem 2rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.84rem;
+    color: var(--text-muted);
+  }
+  .breadcrumb a { color: var(--text-soft); text-decoration: none; transition: color var(--transition); }
+  .breadcrumb a:hover { color: var(--accent-strong); }
+  .breadcrumb-sep { color: var(--border-strong); }
+
+  /* ── Detail Layout ───────────────────────── */
+  .detail-layout {
+    max-width: 1280px;
+    margin: 1.5rem auto 0;
+    padding: 0 2rem 4rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2.5rem;
+    align-items: start;
+  }
+
+  /* ── Image Panel ─────────────────────────── */
+  .product-visual {
+    position: sticky;
+    top: calc(var(--nav-height) + 1.5rem);
+  }
+  .product-image-main {
+    aspect-ratio: 4/3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 32px;
+    border: 1px solid var(--border);
+    background:
+      radial-gradient(circle at 30% 20%, rgba(15,98,254,0.10), transparent 55%),
+      radial-gradient(circle at 70% 80%, rgba(245,158,11,0.08), transparent 45%),
+      linear-gradient(180deg, rgba(255,255,255,0.95), rgba(242,245,252,0.92));
+    box-shadow: var(--shadow);
+    font-size: 7rem;
+    position: relative;
+    overflow: hidden;
+    animation: imgFadeIn 0.5s cubic-bezier(0.4,0,0.2,1) both;
+  }
+  @keyframes imgFadeIn {
+    from { opacity: 0; transform: scale(0.97); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  .product-image-main::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(15,98,254,0.04) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .product-badge-overlay {
+    position: absolute;
+    top: 1.2rem;
+    left: 1.2rem;
+    display: flex;
+    gap: 0.5rem;
+  }
+  .stock-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    margin-top: 1.25rem;
+    padding: 0.75rem 1rem;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.86);
+    font-size: 0.88rem;
+    font-weight: 700;
+  }
+  .stock-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .stock-dot.ok { background: var(--success); box-shadow: 0 0 0 3px rgba(15,157,88,0.16); animation: pulse-green 2s ease-in-out infinite; }
+  .stock-dot.out { background: var(--danger); }
+  @keyframes pulse-green {
+    0%,100% { box-shadow: 0 0 0 3px rgba(15,157,88,0.16); }
+    50% { box-shadow: 0 0 0 6px rgba(15,157,88,0.06); }
+  }
+  .stock-count { margin-left: auto; font-weight: 800; color: var(--text-muted); font-size: 0.8rem; }
+
+  /* ── Info Panel ──────────────────────────── */
+  .product-info {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    animation: infoSlide 0.45s cubic-bezier(0.4,0,0.2,1) both;
+  }
+  @keyframes infoSlide {
+    from { opacity: 0; transform: translateX(16px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  .product-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+  .product-category-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.8rem;
+    border-radius: 999px;
+    background: var(--accent-soft);
+    border: 1px solid rgba(15,98,254,0.14);
+    color: var(--accent-strong);
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .product-title {
+    margin: 0;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+    line-height: 1.1;
+    letter-spacing: -0.04em;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .product-brand-tag {
+    font-size: 0.94rem;
+    color: var(--text-soft);
+    font-weight: 600;
+  }
+
+  /* Price block */
+  .price-block {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+  }
+  .price-main {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 2.4rem;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.04em;
+  }
+  .price-note {
+    font-size: 0.84rem;
+    color: var(--text-muted);
+  }
+
+  /* Description */
+  .product-description {
+    padding: 1.1rem 1.2rem;
+    border-radius: 18px;
+    background: rgba(255,255,255,0.75);
+    border: 1px solid var(--border);
+    font-size: 0.93rem;
+    color: var(--text-soft);
+    line-height: 1.65;
+  }
+  .product-description p { margin: 0; }
+
+  /* Quantity selector + CTA */
+  .purchase-controls {
+    display: flex;
+    gap: 0.75rem;
+    align-items: stretch;
+  }
+  .qty-control {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: rgba(255,255,255,0.86);
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .qty-btn {
+    width: 44px;
+    height: 50px;
+    border: none;
+    background: transparent;
+    color: var(--text);
+    font-size: 1.3rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background var(--transition), color var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .qty-btn:hover { background: var(--accent-soft); color: var(--accent-strong); }
+  .qty-display {
+    min-width: 36px;
+    text-align: center;
+    font-weight: 800;
+    font-size: 1rem;
+    color: var(--text);
+  }
+  .add-cart-btn-main {
+    flex: 1;
+    min-height: 50px;
+    border: none;
+    border-radius: 999px;
+    color: #fff;
+    background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+    font: inherit;
+    font-size: 0.96rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: transform var(--transition), opacity var(--transition), box-shadow var(--transition);
+    box-shadow: 0 14px 28px rgba(15,98,254,0.22);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem;
+  }
+  .add-cart-btn-main:hover { opacity: 0.95; transform: translateY(-2px); box-shadow: 0 18px 36px rgba(15,98,254,0.28); }
+  .add-cart-btn-main:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+  .add-cart-btn-main.added {
+    background: linear-gradient(135deg, var(--success), #06714a);
+    box-shadow: 0 14px 28px rgba(15,157,88,0.22);
+  }
+
+  /* ── Specs Section ───────────────────────── */
+  .specs-section {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 2rem 4rem;
+  }
+  .specs-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+  .specs-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: var(--text);
+    margin: 0;
+  }
+  .specs-divider {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+  .specs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1px;
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    overflow: hidden;
+    background: var(--border);
+    box-shadow: var(--shadow-soft);
+  }
+  .spec-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.9rem;
+    padding: 1rem 1.15rem;
+    background: rgba(255,255,255,0.88);
+    transition: background var(--transition);
+  }
+  .spec-item:hover { background: rgba(255,255,255,0.98); }
+  .spec-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    background: var(--accent-soft);
+    flex-shrink: 0;
+  }
+  .spec-label {
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    line-height: 1;
+  }
+  .spec-value {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-top: 0.25rem;
+    line-height: 1.3;
+  }
+  .spec-bool-yes { color: var(--success); }
+  .spec-bool-no  { color: var(--text-muted); }
+
+  /* Feature tags */
+  .feature-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .feature-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 700;
+  }
+  .feature-tag.yes { background: rgba(15,157,88,0.08); color: var(--success); border: 1px solid rgba(15,157,88,0.14); }
+  .feature-tag.no  { background: rgba(15,23,42,0.04); color: var(--text-muted); border: 1px solid var(--border); }
+
+  /* Loading state */
+  .detail-loading {
+    max-width: 1280px;
+    margin: 3rem auto;
+    padding: 0 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    color: var(--text-soft);
+  }
+
+  /* Error state */
+  .detail-error {
+    max-width: 640px;
+    margin: 3rem auto;
+    padding: 3rem 2rem;
+    text-align: center;
+    color: var(--text-soft);
+  }
+  .detail-error .err-icon { font-size: 3.5rem; }
+
+  /* Toast */
+  #toast {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    z-index: 9999;
+    max-width: 340px;
+    padding: 0.9rem 1.1rem;
+    border-radius: 18px;
+    background: rgba(15,157,88,0.94);
+    border: 1px solid rgba(255,255,255,0.16);
+    color: #fff;
+    box-shadow: 0 16px 34px rgba(15,157,88,0.18);
+    transform: translateY(120px);
+    opacity: 0;
+    transition: transform 240ms cubic-bezier(0.4,0,0.2,1), opacity 240ms cubic-bezier(0.4,0,0.2,1);
+    pointer-events: none;
+    font-size: 0.92rem;
+    font-weight: 700;
+  }
+  #toast.show { transform: translateY(0); opacity: 1; }
+  #toast.error-toast { background: rgba(214,69,69,0.96); }
+
+  @media (max-width: 980px) {
+    .detail-layout { grid-template-columns: 1fr; gap: 1.5rem; }
+    .product-visual { position: static; }
+  }
+  @media (max-width: 640px) {
+    .detail-layout { padding: 0 1rem 3rem; }
+    .breadcrumb { padding: 1rem 1rem 0; }
+    .specs-section { padding: 0 1rem 3rem; }
+    .purchase-controls { flex-direction: column; }
+    .qty-control { align-self: flex-start; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Breadcrumb -->
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="/customer/browse/">Store</a>
+  <span class="breadcrumb-sep">›</span>
+  <span id="bc-category">Loading…</span>
+  <span class="breadcrumb-sep">›</span>
+  <span id="bc-product" style="color:var(--text); font-weight:700;">–</span>
+</nav>
+
+<!-- Loading State -->
+<div class="detail-loading" id="detail-loading">
+  <div class="spinner" style="width:44px;height:44px;border-width:3px;"></div>
+  <p>Loading product…</p>
+</div>
+
+<!-- Error State (hidden) -->
+<div class="detail-error hidden" id="detail-error">
+  <div class="err-icon">⚠️</div>
+  <h2 style="font-family:'Space Grotesk',sans-serif;">Product not found</h2>
+  <p>This product might have been removed or the link is invalid.</p>
+  <a href="/customer/browse/" class="btn btn-primary" style="margin-top:1rem;">Browse All Products</a>
+</div>
+
+<!-- Detail Layout (hidden until loaded) -->
+<div class="detail-layout hidden" id="detail-layout">
+
+  <!-- Left: Image -->
+  <div class="product-visual">
+    <div class="product-image-main" id="product-img">
+      <div class="product-badge-overlay" id="product-badge-overlay"></div>
+      <span id="product-icon">📦</span>
+    </div>
+    <div class="stock-indicator" id="stock-indicator">
+      <span class="stock-dot ok" id="stock-dot"></span>
+      <span id="stock-label">Checking stock…</span>
+      <span class="stock-count" id="stock-count"></span>
+    </div>
+  </div>
+
+  <!-- Right: Info -->
+  <div class="product-info">
+    <div>
+      <div class="product-meta">
+        <span class="product-category-eyebrow" id="category-eyebrow">Category</span>
+      </div>
+      <h1 class="product-title" id="product-title" style="margin-top:0.65rem;">–</h1>
+      <p class="product-brand-tag" id="product-brand">–</p>
+    </div>
+
+    <div class="price-block">
+      <span class="price-main" id="product-price">–</span>
+      <span class="price-note">Incl. taxes &amp; fees</span>
+    </div>
+
+    <div class="product-description" id="product-description-box" style="display:none">
+      <p id="product-description-text"></p>
+    </div>
+
+    <!-- Feature Highlights -->
+    <div id="feature-highlights" style="display:none">
+      <p style="font-size:0.72rem;font-weight:900;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted);margin:0 0 0.6rem;">Key Features</p>
+      <div class="feature-tags" id="feature-tags-container"></div>
+    </div>
+
+    <!-- Purchase controls -->
+    <div class="purchase-controls">
+      <div class="qty-control">
+        <button class="qty-btn" id="qty-dec" onclick="changeQty(-1)">−</button>
+        <span class="qty-display" id="qty-display">1</span>
+        <button class="qty-btn" id="qty-inc" onclick="changeQty(1)">+</button>
+      </div>
+      <button class="add-cart-btn-main" id="add-cart-btn" onclick="handleAddToCart()">
+        🛒 Add to Cart
+      </button>
+    </div>
+
+    <!-- Warranty / meta info -->
+    <div id="product-meta-info" style="display:flex;gap:1rem;flex-wrap:wrap;"></div>
+  </div>
+</div>
+
+<!-- Full Specs -->
+<section class="specs-section hidden" id="specs-section">
+  <div class="specs-header">
+    <h2 class="specs-title">Full Specifications</h2>
+    <div class="specs-divider"></div>
+  </div>
+  <div class="specs-grid" id="specs-grid">
+    <!-- filled by JS -->
+  </div>
+</section>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  const PRODUCT_TYPE  = '{{ product_type }}';
+  const ITEM_ID       = {{ item_id }};
+
+  const ITEM_TYPE_META = {
+    computers:        { icon: '💻', label: 'Computer',         badgeClass: 'badge-blue' },
+    mobiles:          { icon: '📱', label: 'Smartphone',       badgeClass: 'badge-yellow' },
+    tablets:          { icon: '🖥️', label: 'Tablet',           badgeClass: 'badge-blue' },
+    smartwatches:     { icon: '⌚', label: 'Smartwatch',       badgeClass: 'badge-purple' },
+    headphones:       { icon: '🎧', label: 'Headphone',        badgeClass: 'badge-yellow' },
+    cameras:          { icon: '📷', label: 'Camera',           badgeClass: 'badge-blue' },
+    gaming_consoles:  { icon: '🎮', label: 'Gaming Console',   badgeClass: 'badge-red' },
+    tvs:              { icon: '📺', label: 'TV',               badgeClass: 'badge-blue' },
+    smart_homes:      { icon: '🏠', label: 'Smart Home',       badgeClass: 'badge-green' },
+    fitness_trackers: { icon: '💪', label: 'Fitness Tracker',  badgeClass: 'badge-orange' },
+    drones:           { icon: '🚁', label: 'Drone',            badgeClass: 'badge-blue' },
+  };
+
+  const PRODUCT_TYPE_TO_CART_TYPE = {
+    computers: 'computer', mobiles: 'mobile', tablets: 'tablet',
+    smartwatches: 'smartwatch', headphones: 'headphone', cameras: 'camera',
+    gaming_consoles: 'gaming_console', tvs: 'tv', smart_homes: 'smart_home',
+    fitness_trackers: 'fitness_tracker', drones: 'drone',
+  };
+
+  // ── Spec definitions per category ──────────────────────────────────────
+  const SPEC_SCHEMAS = {
+    computers: [
+      { key: 'cpu',                   label: 'Processor',           icon: '⚙️' },
+      { key: 'ram_gb',                label: 'Memory (RAM)',         icon: '🧠', unit: 'GB' },
+      { key: 'storage_gb',            label: 'Storage',             icon: '💾', unit: 'GB' },
+      { key: 'storage_type',          label: 'Storage Type',        icon: '📀' },
+      { key: 'gpu',                   label: 'Graphics Card',       icon: '🖥️' },
+      { key: 'display_size_inches',   label: 'Display Size',        icon: '📐', unit: '"' },
+      { key: 'display_resolution',    label: 'Resolution',          icon: '🔍' },
+      { key: 'refresh_rate_hz',       label: 'Refresh Rate',        icon: '⚡', unit: 'Hz' },
+      { key: 'operating_system',      label: 'Operating System',    icon: '💿' },
+      { key: 'battery_hours',         label: 'Battery Life',        icon: '🔋', unit: 'hrs' },
+      { key: 'warranty_months',       label: 'Warranty',            icon: '🛡️', unit: ' months' },
+      { key: 'ports',                 label: 'Ports',               icon: '🔌' },
+      { bool: 'has_touchscreen',      label: 'Touchscreen',         icon: '👆' },
+      { bool: 'has_backlit_keyboard', label: 'Backlit Keyboard',    icon: '⌨️' },
+      { bool: 'has_fingerprint_reader',label:'Fingerprint Reader',  icon: '🔐' },
+      { bool: 'has_webcam',           label: 'Webcam',              icon: '📸' },
+    ],
+    mobiles: [
+      { key: 'chipset',               label: 'Chipset',             icon: '⚙️' },
+      { key: 'ram_gb',                label: 'Memory (RAM)',         icon: '🧠', unit: 'GB' },
+      { key: 'storage_gb',            label: 'Storage',             icon: '💾', unit: 'GB' },
+      { key: 'display_size_inches',   label: 'Screen Size',         icon: '📐', unit: '"' },
+      { key: 'display_resolution',    label: 'Resolution',          icon: '🔍' },
+      { key: 'refresh_rate_hz',       label: 'Refresh Rate',        icon: '⚡', unit: 'Hz' },
+      { key: 'main_camera_mp',        label: 'Main Camera',         icon: '📷', unit: 'MP' },
+      { key: 'front_camera_mp',       label: 'Front Camera',        icon: '🤳', unit: 'MP' },
+      { key: 'battery_mah',           label: 'Battery',             icon: '🔋', unit: 'mAh' },
+      { key: 'fast_charging_w',       label: 'Fast Charging',       icon: '⚡', unit: 'W' },
+      { key: 'operating_system',      label: 'Operating System',    icon: '💿' },
+      { key: 'sim_type',              label: 'SIM Type',            icon: '📶' },
+      { bool: 'has_5g',               label: '5G',                  icon: '📡' },
+      { bool: 'has_nfc',              label: 'NFC',                 icon: '📲' },
+      { bool: 'has_wireless_charging',label: 'Wireless Charging',   icon: '🔌' },
+      { bool: 'has_water_resistance', label: 'Water Resistant',     icon: '💧' },
+    ],
+    tablets: [
+      { key: 'cpu',                   label: 'Processor',           icon: '⚙️' },
+      { key: 'ram_gb',                label: 'Memory (RAM)',         icon: '🧠', unit: 'GB' },
+      { key: 'storage_gb',            label: 'Storage',             icon: '💾', unit: 'GB' },
+      { key: 'display_size_inches',   label: 'Screen Size',         icon: '📐', unit: '"' },
+      { key: 'display_resolution',    label: 'Resolution',          icon: '🔍' },
+      { key: 'refresh_rate_hz',       label: 'Refresh Rate',        icon: '⚡', unit: 'Hz' },
+      { key: 'main_camera_mp',        label: 'Rear Camera',         icon: '📷', unit: 'MP' },
+      { key: 'front_camera_mp',       label: 'Front Camera',        icon: '🤳', unit: 'MP' },
+      { key: 'battery_mah',           label: 'Battery',             icon: '🔋', unit: 'mAh' },
+      { key: 'operating_system',      label: 'Operating System',    icon: '💿' },
+      { key: 'weight_grams',          label: 'Weight',              icon: '⚖️', unit: 'g' },
+      { bool: 'has_stylus_support',   label: 'Stylus Support',      icon: '✏️' },
+      { bool: 'has_keyboard_support', label: 'Keyboard Support',    icon: '⌨️' },
+      { bool: 'has_cellular',         label: 'Cellular (SIM)',      icon: '📡' },
+    ],
+    smartwatches: [
+      { key: 'compatibility',          label: 'Compatibility',       icon: '📱' },
+      { key: 'display_type',           label: 'Display Type',        icon: '🖥️' },
+      { key: 'display_size_inches',    label: 'Display Size',        icon: '📐', unit: '"' },
+      { key: 'battery_days',           label: 'Battery Life',        icon: '🔋', unit: ' days' },
+      { key: 'strap_material',         label: 'Strap Material',      icon: '🔗' },
+      { key: 'case_material',          label: 'Case Material',       icon: '⭕' },
+      { bool: 'has_gps',               label: 'GPS',                 icon: '🗺️' },
+      { bool: 'has_heart_rate_monitor',label: 'Heart Rate Monitor',  icon: '❤️' },
+      { bool: 'has_blood_oxygen_monitor',label:'Blood Oxygen (SpO2)',icon: '🩸' },
+      { bool: 'has_ecg',               label: 'ECG',                 icon: '💓' },
+      { bool: 'has_sleep_tracking',    label: 'Sleep Tracking',      icon: '😴' },
+      { bool: 'has_water_resistance',  label: 'Water Resistant',     icon: '💧' },
+    ],
+    headphones: [
+      { key: 'headphone_type',        label: 'Type',                icon: '🎧' },
+      { key: 'bluetooth_version',     label: 'Bluetooth',           icon: '🔵' },
+      { key: 'battery_hours',         label: 'Battery Life',        icon: '🔋', unit: 'hrs' },
+      { key: 'charging_time_hours',   label: 'Charging Time',       icon: '⚡', unit: 'hrs' },
+      { key: 'driver_size_mm',        label: 'Driver Size',         icon: '🔊', unit: 'mm' },
+      { key: 'impedance_ohms',        label: 'Impedance',           icon: '〰️', unit: ' Ω' },
+      { key: 'frequency_response',    label: 'Frequency Response',  icon: '🎵' },
+      { bool: 'is_wireless',          label: 'Wireless',            icon: '📡' },
+      { bool: 'has_noise_cancelling', label: 'Noise Cancelling',    icon: '🤫' },
+      { bool: 'has_microphone',       label: 'Built-in Mic',        icon: '🎤' },
+      { bool: 'has_fast_charging',    label: 'Fast Charging',       icon: '⚡' },
+    ],
+    cameras: [
+      { key: 'camera_type',           label: 'Camera Type',         icon: '📷' },
+      { key: 'sensor_type',           label: 'Sensor',              icon: '🔭' },
+      { key: 'megapixels',            label: 'Megapixels',          icon: '🎯', unit: 'MP' },
+      { key: 'iso_range',             label: 'ISO Range',           icon: '☀️' },
+      { key: 'video_resolution',      label: 'Video Resolution',    icon: '🎬' },
+      { key: 'video_fps',             label: 'Video FPS',           icon: '🎞️', unit: 'fps' },
+      { key: 'lens_mount',            label: 'Lens Mount',          icon: '🔩' },
+      { key: 'viewfinder_type',       label: 'Viewfinder',          icon: '👁️' },
+      { key: 'battery_shots',         label: 'Battery (shots)',      icon: '🔋', unit: ' shots' },
+      { bool: 'has_image_stabilization',label:'Image Stabilization',icon: '🔃' },
+      { bool: 'has_wifi',             label: 'Wi-Fi',               icon: '📶' },
+      { bool: 'has_bluetooth',        label: 'Bluetooth',           icon: '🔵' },
+      { bool: 'has_gps',              label: 'GPS',                 icon: '🗺️' },
+    ],
+    gaming_consoles: [
+      { key: 'console_type',          label: 'Console Type',        icon: '🎮' },
+      { key: 'generation',            label: 'Generation',          icon: '🔢' },
+      { key: 'storage_gb',            label: 'Storage',             icon: '💾', unit: 'GB' },
+      { key: 'max_resolution',        label: 'Max Resolution',      icon: '🎥' },
+      { key: 'max_fps',               label: 'Max FPS',             icon: '⚡', unit: 'fps' },
+      { key: 'backward_compatibility',label: 'Backward Compat.',    icon: '⏪' },
+      { bool: 'has_4k_support',       label: '4K Support',          icon: '🔲' },
+      { bool: 'has_ray_tracing',      label: 'Ray Tracing',         icon: '✨' },
+      { bool: 'has_disc_drive',       label: 'Disc Drive',          icon: '💿' },
+      { bool: 'has_online_gaming',    label: 'Online Gaming',       icon: '🌐' },
+      { bool: 'controller_included',  label: 'Controller Included', icon: '🕹️' },
+      { bool: 'subscription_required',label: 'Subscription Req.',   icon: '💳' },
+    ],
+    tvs: [
+      { key: 'display_type',          label: 'Panel Type',          icon: '🖥️' },
+      { key: 'display_size_inches',   label: 'Screen Size',         icon: '📐', unit: '"' },
+      { key: 'resolution',            label: 'Resolution',          icon: '🔍' },
+      { key: 'refresh_rate_hz',       label: 'Refresh Rate',        icon: '⚡', unit: 'Hz' },
+      { key: 'operating_system',      label: 'Smart TV OS',         icon: '💿' },
+      { key: 'hdr_format',            label: 'HDR Format',          icon: '🌈' },
+      { key: 'hdmi_ports',            label: 'HDMI Ports',          icon: '🔌', unit: 'x' },
+      { key: 'usb_ports',             label: 'USB Ports',           icon: '🔌', unit: 'x' },
+      { bool: 'has_smart_tv',         label: 'Smart TV',            icon: '📱' },
+      { bool: 'has_hdr',              label: 'HDR',                 icon: '✨' },
+      { bool: 'has_dolby_vision',     label: 'Dolby Vision',        icon: '🎥' },
+      { bool: 'has_dolby_atmos',      label: 'Dolby Atmos',         icon: '🔊' },
+      { bool: 'has_wifi',             label: 'Wi-Fi',               icon: '📶' },
+      { bool: 'has_bluetooth',        label: 'Bluetooth',           icon: '🔵' },
+      { bool: 'wall_mountable',       label: 'Wall Mountable',      icon: '🪝' },
+    ],
+    smart_homes: [
+      { key: 'smart_category',        label: 'Category',            icon: '🏠' },
+      { key: 'voice_assistant',       label: 'Voice Assistant',     icon: '🎙️' },
+      { key: 'power_source',          label: 'Power Source',        icon: '🔌' },
+      { key: 'connectivity',          label: 'Connectivity',        icon: '📡' },
+      { bool: 'mobile_app_support',   label: 'Mobile App',          icon: '📱' },
+      { bool: 'has_scheduling',       label: 'Scheduling',          icon: '📅' },
+      { bool: 'has_automation',       label: 'Automation',          icon: '🤖' },
+      { bool: 'installation_required',label: 'Install Required',    icon: '🔧' },
+    ],
+    fitness_trackers: [
+      { key: 'tracker_type',            label: 'Tracker Type',        icon: '💪' },
+      { key: 'display_type',            label: 'Display Type',        icon: '🖥️' },
+      { key: 'battery_days',            label: 'Battery Life',        icon: '🔋', unit: ' days' },
+      { key: 'strap_material',          label: 'Strap Material',      icon: '🔗' },
+      { bool: 'has_gps',                label: 'GPS',                 icon: '🗺️' },
+      { bool: 'has_heart_rate_monitor', label: 'Heart Rate Monitor',  icon: '❤️' },
+      { bool: 'has_blood_oxygen_monitor',label:'Blood Oxygen (SpO2)', icon: '🩸' },
+      { bool: 'has_sleep_tracking',     label: 'Sleep Tracking',      icon: '😴' },
+      { bool: 'has_step_counter',       label: 'Step Counter',        icon: '👟' },
+      { bool: 'has_calorie_tracking',   label: 'Calorie Tracking',    icon: '🔥' },
+      { bool: 'has_water_resistance',   label: 'Water Resistant',     icon: '💧' },
+      { bool: 'mobile_app_support',     label: 'Mobile App',          icon: '📱' },
+    ],
+    drones: [
+      { key: 'drone_type',              label: 'Drone Type',          icon: '🚁' },
+      { key: 'camera_resolution_mp',    label: 'Camera',              icon: '📷', unit: 'MP' },
+      { key: 'video_resolution',        label: 'Video Resolution',    icon: '🎬' },
+      { key: 'flight_time_minutes',     label: 'Flight Time',         icon: '⏱️', unit: ' min' },
+      { key: 'max_range_km',            label: 'Max Range',           icon: '📏', unit: ' km' },
+      { key: 'max_speed_kmh',           label: 'Max Speed',           icon: '💨', unit: ' km/h' },
+      { key: 'weight_grams',            label: 'Weight',              icon: '⚖️', unit: 'g' },
+      { key: 'battery_charging_time',   label: 'Charging Time',       icon: '🔋', unit: ' min' },
+      { bool: 'has_gps',                label: 'GPS',                 icon: '🗺️' },
+      { bool: 'has_obstacle_avoidance', label: 'Obstacle Avoidance',  icon: '🛡️' },
+      { bool: 'has_follow_me',          label: 'Follow Me Mode',      icon: '👤' },
+      { bool: 'has_return_to_home',     label: 'Return to Home',      icon: '🏠' },
+      { bool: 'controller_included',    label: 'Controller Included', icon: '🕹️' },
+    ],
+  };
+
+  let currentProduct = null;
+  let qty = 1;
+
+  // ── Helpers ───────────────────────────────────────────────────────
+  function escHtml(str) {
+    if (!str && str !== 0) return '';
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function fmtPrice(n) {
+    return new Intl.NumberFormat('en-US', { style:'currency', currency:'USD' }).format(n);
+  }
+  function showToast(msg, isError = false) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'show' + (isError ? ' error-toast' : '');
+    setTimeout(() => t.className = '', 3500);
+  }
+
+  // ── Load product ─────────────────────────────────────────────────
+  async function loadProduct() {
+    try {
+      const res = await fetch(`/proxy/product/api/${PRODUCT_TYPE}/${ITEM_ID}/`);
+      if (!res.ok) throw new Error('Not found');
+      const data = await res.json();
+      currentProduct = data.item;
+      renderProduct(currentProduct);
+    } catch (e) {
+      document.getElementById('detail-loading').classList.add('hidden');
+      document.getElementById('detail-error').classList.remove('hidden');
+    }
+  }
+
+  // ── Render ───────────────────────────────────────────────────────
+  function renderProduct(item) {
+    const meta = ITEM_TYPE_META[PRODUCT_TYPE] || { icon: '📦', label: 'Product', badgeClass: 'badge-blue' };
+
+    // Breadcrumb
+    document.getElementById('bc-category').textContent = meta.label;
+    document.getElementById('bc-product').textContent  = item.name;
+    document.title = `${item.name} – TechVault`;
+
+    // Icon & badge
+    document.getElementById('product-icon').textContent = meta.icon;
+    document.getElementById('product-badge-overlay').innerHTML =
+      `<span class="badge ${meta.badgeClass}">${escHtml(meta.label)}</span>`;
+
+    // Stock
+    const inStock = item.stock > 0;
+    const dot     = document.getElementById('stock-dot');
+    dot.className = 'stock-dot ' + (inStock ? 'ok' : 'out');
+    document.getElementById('stock-label').textContent  = inStock ? 'In Stock' : 'Out of Stock';
+    document.getElementById('stock-label').style.color  = inStock ? 'var(--success)' : 'var(--danger)';
+    document.getElementById('stock-count').textContent  = inStock ? `${item.stock} available` : '';
+
+    // Category + name + brand
+    document.getElementById('category-eyebrow').textContent = meta.label;
+    document.getElementById('product-title').textContent    = item.name;
+    document.getElementById('product-brand').textContent    = `by ${item.brand}`;
+    document.getElementById('product-price').textContent    = fmtPrice(item.price);
+
+    // Description
+    if (item.description) {
+      document.getElementById('product-description-box').style.display = '';
+      document.getElementById('product-description-text').textContent = item.description;
+    }
+
+    // Feature highlights (boolean "yes" features)
+    const boolFeatures = getBoolFeatures(item);
+    if (boolFeatures.length > 0) {
+      document.getElementById('feature-highlights').style.display = '';
+      document.getElementById('feature-tags-container').innerHTML = boolFeatures
+        .slice(0, 10)
+        .map(f => `<span class="feature-tag ${f.val ? 'yes' : 'no'}">${f.val ? '✓' : '✗'} ${escHtml(f.label)}</span>`)
+        .join('');
+    }
+
+    // Warranty / meta info
+    const metaInfo = [];
+    if (item.warranty_months) metaInfo.push(`🛡️ ${item.warranty_months}-month warranty`);
+    if (item.weight_grams)    metaInfo.push(`⚖️ ${item.weight_grams}g`);
+    if (metaInfo.length > 0) {
+      document.getElementById('product-meta-info').innerHTML = metaInfo.map(m =>
+        `<span style="font-size:0.84rem;color:var(--text-soft);font-weight:600;">${escHtml(m)}</span>`
+      ).join('');
+    }
+
+    // Add to cart button
+    const btn = document.getElementById('add-cart-btn');
+    if (!inStock) {
+      btn.disabled = true;
+      btn.textContent = '✗ Out of Stock';
+      document.getElementById('qty-dec').disabled = true;
+      document.getElementById('qty-inc').disabled = true;
+    }
+
+    // Full specs
+    renderSpecs(item);
+
+    // Show layout
+    document.getElementById('detail-loading').classList.add('hidden');
+    document.getElementById('detail-layout').classList.remove('hidden');
+    document.getElementById('specs-section').classList.remove('hidden');
+  }
+
+  function getBoolFeatures(item) {
+    const schema = SPEC_SCHEMAS[PRODUCT_TYPE] || [];
+    return schema
+      .filter(s => s.bool && item[s.bool] !== undefined)
+      .map(s => ({ label: s.label, val: item[s.bool] }));
+  }
+
+  function renderSpecs(item) {
+    const schema = SPEC_SCHEMAS[PRODUCT_TYPE] || [];
+    const grid   = document.getElementById('specs-grid');
+    const rows   = [];
+
+    // Iterate schema for this product type
+    for (const s of schema) {
+      if (s.bool !== undefined) {
+        if (item[s.bool] === undefined) continue;
+        const val = item[s.bool];
+        rows.push(specItem(s.icon, s.label,
+          `<span class="${val ? 'spec-bool-yes' : 'spec-bool-no'}">${val ? '✓ Yes' : '✗ No'}</span>`));
+      } else if (s.key) {
+        const raw = item[s.key];
+        if (raw === null || raw === undefined || raw === '') continue;
+        const display = s.unit
+          ? (s.unit.startsWith(' ') ? `${raw}${s.unit}` : `${raw} ${s.unit}`)
+          : String(raw);
+        rows.push(specItem(s.icon, s.label, escHtml(display)));
+      }
+    }
+
+    // Add any remaining fields not covered by schema
+    const schemaKeys = new Set([
+      ...schema.filter(s=>s.key).map(s=>s.key),
+      ...schema.filter(s=>s.bool).map(s=>s.bool),
+    ]);
+    const skip = new Set(['id','is_active','created_at','updated_at','product_type','description','name','brand','price','stock','color_options','ports']);
+    for (const [k, v] of Object.entries(item)) {
+      if (schemaKeys.has(k) || skip.has(k) || v === null || v === undefined || v === '') continue;
+      const label = k.replace(/_/g,' ').replace(/\b\w/g, c => c.toUpperCase());
+      let display;
+      if (typeof v === 'boolean') {
+        display = `<span class="${v ? 'spec-bool-yes' : 'spec-bool-no'}">${v ? '✓ Yes' : '✗ No'}</span>`;
+      } else {
+        display = escHtml(String(v));
+      }
+      rows.push(specItem('📋', label, display));
+    }
+
+    // Color options
+    if (item.color_options) {
+      try {
+        const colors = JSON.parse(item.color_options);
+        if (Array.isArray(colors) && colors.length > 0) {
+          rows.push(specItem('🎨', 'Color Options',
+            colors.map(c => `<span style="display:inline-block;padding:0.2rem 0.6rem;border-radius:999px;background:rgba(15,23,42,0.05);border:1px solid var(--border);font-size:0.8rem;margin:0.1rem;">${escHtml(c)}</span>`).join(' ')
+          ));
+        }
+      } catch {}
+    }
+
+    // Ports
+    if (item.ports) {
+      try {
+        const ports = JSON.parse(item.ports);
+        if (Array.isArray(ports) && ports.length > 0) {
+          rows.push(specItem('🔌', 'Ports', ports.map(p => escHtml(p)).join(', ')));
+        } else if (typeof ports === 'object') {
+          const portStr = Object.entries(ports).map(([k,v]) => `${escHtml(k)}: ${escHtml(v)}`).join(', ');
+          if (portStr) rows.push(specItem('🔌', 'Ports', portStr));
+        }
+      } catch {
+        if (item.ports) rows.push(specItem('🔌', 'Ports', escHtml(item.ports)));
+      }
+    }
+
+    grid.innerHTML = rows.length > 0
+      ? rows.join('')
+      : '<div style="padding:2rem;color:var(--text-soft);text-align:center;grid-column:1/-1;">No detailed specifications available.</div>';
+  }
+
+  function specItem(icon, label, valueHtml) {
+    return `
+      <div class="spec-item">
+        <div class="spec-icon">${escHtml(icon)}</div>
+        <div>
+          <div class="spec-label">${escHtml(label)}</div>
+          <div class="spec-value">${valueHtml}</div>
+        </div>
+      </div>`;
+  }
+
+  // ── Qty ──────────────────────────────────────────────────────────
+  function changeQty(delta) {
+    const max = currentProduct?.stock || 1;
+    qty = Math.max(1, Math.min(qty + delta, max));
+    document.getElementById('qty-display').textContent = qty;
+  }
+
+  // ── Add to Cart ──────────────────────────────────────────────────
+  async function handleAddToCart() {
+    const token = getToken();
+    if (!token) {
+      showToast('Please sign in to add items to your cart.', true);
+      setTimeout(() => location.href = '/customer/login/', 1200);
+      return;
+    }
+    const btn = document.getElementById('add-cart-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner" style="width:18px;height:18px;border-width:2px;border-top-color:#fff;border-color:rgba(255,255,255,0.35);"></div> Adding…';
+
+    const cartType = PRODUCT_TYPE_TO_CART_TYPE[PRODUCT_TYPE] || PRODUCT_TYPE;
+    try {
+      const res = await fetch('/proxy/customer/cart/items/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Customer-Token': token },
+        body: JSON.stringify({ item_type: cartType, item_id: ITEM_ID, quantity: qty }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showToast(data.error || 'Failed to add item.', true);
+        btn.disabled = false;
+        btn.innerHTML = '🛒 Add to Cart';
+        return;
+      }
+      btn.classList.add('added');
+      btn.innerHTML = '✓ Added to Cart!';
+      showToast(`✓ ${currentProduct?.name || 'Item'} (×${qty}) added to cart!`);
+      refreshCartBadge();
+      setTimeout(() => {
+        btn.classList.remove('added');
+        btn.disabled = false;
+        btn.innerHTML = '🛒 Add to Cart';
+      }, 2500);
+    } catch (e) {
+      showToast('Error connecting to server.', true);
+      btn.disabled = false;
+      btn.innerHTML = '🛒 Add to Cart';
+    }
+  }
+
+  // ── Init ─────────────────────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', loadProduct);
+</script>
+{% endblock %}

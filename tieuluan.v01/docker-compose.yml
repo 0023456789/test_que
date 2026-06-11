@@ -1,0 +1,31 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: healthcare_db
+    environment:
+      POSTGRES_DB: healthcare
+      POSTGRES_USER: healthcare_user
+      POSTGRES_PASSWORD: healthcare_pass
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  web:
+    build: .
+    container_name: healthcare_web
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      DEBUG: "1"
+      SECRET_KEY: change-me-in-production
+      ALLOWED_HOSTS: localhost,127.0.0.1
+      DATABASE_URL: postgres://healthcare_user:healthcare_pass@db:5432/healthcare
+
+volumes:
+  postgres_data:

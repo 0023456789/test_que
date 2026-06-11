@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CareBridge Health — Smart Healthcare Platform</title>
+  <meta name="description" content="Modern healthcare booking system with real-time doctor and patient services. Microservices architecture." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Ambient orbs -->
+  <div class="bg-orb orb-one"></div>
+  <div class="bg-orb orb-two"></div>
+  <div class="bg-orb orb-three"></div>
+
+  <!-- Toast container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- ============================================================
+       PAGE: AUTH (Login / Register) — full-screen centered
+       ============================================================ -->
+  <div id="pageAuth" class="page page-auth">
+    <div class="auth-screen">
+
+      <!-- Left branding panel -->
+      <div class="auth-brand">
+        <div class="auth-brand-inner">
+          <span class="auth-brand-icon">🏥</span>
+          <h1 class="auth-brand-title">CareBridge</h1>
+          <p class="auth-brand-tagline">Human-centered healthcare platform providing seamless booking and care management.</p>
+        </div>
+      </div>
+
+      <!-- Right form panel -->
+      <div class="auth-forms-panel">
+
+        <!-- LOGIN TAB -->
+        <div id="loginTab" class="auth-tab">
+          <div class="auth-tab-header">
+            <h2>Welcome back</h2>
+            <p>Sign in to your account to continue</p>
+          </div>
+
+          <div class="demo-accounts">
+            <p class="demo-title">Quick Demo Login</p>
+            <div class="demo-chips">
+              <button class="chip chip-staff" onclick="fillLogin('staff','staff123')">👨‍💼 Staff</button>
+              <button class="chip chip-patient" onclick="fillLogin('patient1','patient123')">🧑 Patient 1</button>
+              <button class="chip chip-patient" onclick="fillLogin('patient2','patient123')">🧑 Patient 2</button>
+              <button class="chip chip-doctor" onclick="fillLogin('doctor1','doctor123')">🩺 Doctor 1</button>
+              <button class="chip chip-doctor" onclick="fillLogin('doctor2','doctor123')">🩺 Doctor 2</button>
+            </div>
+          </div>
+
+          <form id="loginForm" class="auth-form-vertical" autocomplete="on">
+            <label>
+              <span class="label-text">Username</span>
+              <div class="input-icon-wrap">
+                <span class="input-icon">👤</span>
+                <input id="loginUsername" type="text" placeholder="Enter your username" required />
+              </div>
+            </label>
+            <label>
+              <span class="label-text">Password</span>
+              <div class="input-icon-wrap">
+                <span class="input-icon">🔒</span>
+                <input id="loginPassword" type="password" placeholder="Enter your password" required />
+              </div>
+            </label>
+            <button type="submit" class="cta cta-full" id="loginBtn">
+              <span class="btn-text">Sign In</span>
+              <span class="spinner"></span>
+            </button>
+          </form>
+
+          <p class="auth-switch">
+            Don't have an account? <a href="#" id="showRegisterLink">Create one</a>
+          </p>
+        </div>
+
+        <!-- REGISTER TAB -->
+        <div id="registerTab" class="auth-tab" style="display:none;">
+          <div class="auth-tab-header">
+            <h2>Create Account</h2>
+            <p>Register as a new patient</p>
+          </div>
+
+          <form id="registerForm" class="auth-form-vertical" autocomplete="off">
+            <div class="form-row-2">
+              <label>
+                <span class="label-text">Username</span>
+                <div class="input-icon-wrap">
+                  <span class="input-icon">👤</span>
+                  <input id="regUsername" type="text" placeholder="Min 3 characters" required minlength="3" />
+                </div>
+              </label>
+              <label>
+                <span class="label-text">Password</span>
+                <div class="input-icon-wrap">
+                  <span class="input-icon">🔒</span>
+                  <input id="regPassword" type="password" placeholder="Min 6 characters" required minlength="6" />
+                </div>
+              </label>
+            </div>
+            <label>
+              <span class="label-text">Full Name</span>
+              <div class="input-icon-wrap">
+                <span class="input-icon">📝</span>
+                <input id="regFullName" type="text" placeholder="e.g. Nguyen Van C" required />
+              </div>
+            </label>
+            <div class="form-row-2">
+              <label>
+                <span class="label-text">Age</span>
+                <div class="input-icon-wrap">
+                  <span class="input-icon">🎂</span>
+                  <input id="regAge" type="number" min="1" max="150" placeholder="e.g. 30" required />
+                </div>
+              </label>
+              <label>
+                <span class="label-text">Phone</span>
+                <div class="input-icon-wrap">
+                  <span class="input-icon">📞</span>
+                  <input id="regPhone" type="tel" placeholder="e.g. 0901234567" required />
+                </div>
+              </label>
+            </div>
+            <button type="submit" class="cta cta-full" id="registerBtn">
+              <span class="btn-text">Create Account</span>
+              <span class="spinner"></span>
+            </button>
+          </form>
+
+          <p class="auth-switch">
+            Already have an account? <a href="#" id="showLoginLink">Sign in</a>
+          </p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       PAGE: DASHBOARD — main app after authentication
+       ============================================================ -->
+  <div id="pageDashboard" class="page page-dashboard" style="display:none;">
+
+    <!-- Top nav -->
+    <header class="topbar" id="topbar">
+      <div class="brand">
+        <span class="brand-icon">🏥</span>
+        <span class="brand-name">CareBridge</span>
+      </div>
+      <nav class="menu" id="navMenu">
+        <a href="#" id="navHome" class="active">Home</a>
+        <a href="#" id="navBooking">Book Visit</a>
+        <a href="#" id="navAppointments">Appointments</a>
+      </nav>
+      <div class="topbar-right">
+        <div class="topbar-user" id="topbarUser">
+          <div class="user-avatar user-avatar-sm" id="topbarAvatar">S</div>
+          <span class="topbar-username" id="topbarUsername">staff</span>
+          <span class="topbar-role-badge" id="topbarRoleBadge">STAFF</span>
+        </div>
+        <button id="logoutBtn" class="cta cta-sm cta-danger">Sign Out</button>
+      </div>
+      <button class="hamburger" id="hamburgerBtn" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+      </button>
+    </header>
+
+    <main>
+      <!-- Home Page -->
+      <div id="pageHome" class="task-page">
+        <section class="hero">
+          <div class="hero-content">
+            <h1>Human-Centered Care,<br />Ready in Minutes</h1>
+            <p class="subtitle">A modern healthcare booking experience connecting patients with the right doctors instantly.</p>
+            <div class="hero-actions">
+              <button class="cta" id="heroCTABook">Book an Appointment</button>
+              <button class="cta cta-outline" id="heroCTAAppts">View Appointments</button>
+            </div>
+          </div>
+        </section>
+      </div>
+
+
+
+      <!-- Booking Page -->
+      <div id="pageBooking" class="task-page" style="display:none;">
+        <section id="bookingSection" class="booking-section">
+          <h2 class="section-title">Schedule Outpatient Visit</h2>
+          <p class="section-subtitle">Select a patient, doctor, and time for the visit</p>
+
+          <div class="booking-form-panel glass" id="bookingFormPanel">
+          <h3>📋 New Appointment</h3>
+          <form id="appointmentForm">
+            <div class="field-grid">
+              <label id="patientSelectWrap">
+                <span class="label-text">Patient</span>
+                <select id="patientSelect" required></select>
+              </label>
+              <label id="selfPatientWrap" style="display:none;">
+                <span class="label-text">Patient</span>
+                <input id="selfPatient" type="text" disabled />
+              </label>
+              <label>
+                <span class="label-text">Doctor</span>
+                <select id="doctorSelect" required></select>
+              </label>
+              <label>
+                <span class="label-text">Visit Date & Time</span>
+                <input id="visitTime" type="datetime-local" required />
+              </label>
+              <label>
+                <span class="label-text">Reason for Visit</span>
+                <input id="reason" type="text" placeholder="e.g. General consultation" required />
+              </label>
+            </div>
+            <button type="submit" class="cta" id="bookBtn">
+              <span class="btn-text">Confirm Appointment</span>
+              <span class="spinner"></span>
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Appointments Page -->
+      <div id="pageAppointmentsView" class="task-page" style="display:none;">
+        <section id="appointments-section" class="appointments-section">
+        <h2 class="section-title">Appointments</h2>
+        <p class="section-subtitle" id="appointmentsSubtitle">Loading your appointments...</p>
+        <div id="appointmentsLoading" class="loading-block" style="display:none;">
+          <div class="loading-spinner"></div>
+          <span>Loading appointments...</span>
+        </div>
+        <div id="appointmentsList" class="appointments-list"></div>
+        <div id="noAppointments" class="empty-state" style="display:none;">
+          <div class="empty-icon">📭</div>
+          <p>No appointments found</p>
+        </div>
+        </section>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <span class="brand-icon">🏥</span> CareBridge Health
+        </div>
+        <div class="footer-meta">
+          <span>© 2026 CareBridge Health. All rights reserved.</span>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+CREATE DATABASE computer_service_db;
+CREATE DATABASE mobile_service_db;
+CREATE DATABASE catalog_service_db;
+CREATE DATABASE tablet_service_db;
+CREATE DATABASE monitor_service_db;
+CREATE DATABASE keyboard_service_db;
+CREATE DATABASE mouse_service_db;
+CREATE DATABASE headphone_service_db;
+CREATE DATABASE speaker_service_db;
+CREATE DATABASE camera_service_db;
+CREATE DATABASE printer_service_db;
+CREATE DATABASE product_service_db;

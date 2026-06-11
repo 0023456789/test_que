@@ -1,0 +1,204 @@
+{% extends "app/base.html" %}
+{% block title %}Create Account – TechVault{% endblock %}
+{% block meta_description %}Join TechVault today and get access to the best deals on laptops, computers, and smartphones.{% endblock %}
+
+{% block extra_head %}
+<style>
+  .auth-page {
+    min-height: calc(100vh - var(--nav-height));
+    display: flex; align-items: center; justify-content: center;
+    padding: 4rem 1.5rem 3rem;
+  }
+  .auth-card {
+    width: 100%; max-width: 500px;
+    background: rgba(255,255,255,0.9);
+    border: 1px solid var(--border);
+    border-radius: 30px;
+    padding: 2.2rem;
+    backdrop-filter: blur(18px);
+    box-shadow: var(--shadow);
+  }
+  .auth-header { text-align: center; margin-bottom: 2rem; }
+  .auth-icon {
+    width: 60px; height: 60px;
+    background: linear-gradient(135deg, #0f62fe, #f59e0b);
+    border-radius: 18px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.6rem; margin: 0 auto 1.2rem;
+    box-shadow: 0 14px 24px rgba(15,98,254,0.18);
+  }
+  .auth-title { font-family: 'Space Grotesk', sans-serif; font-size: 1.8rem; font-weight: 700; margin-bottom: 0.35rem; }
+  .auth-subtitle { color: var(--text-secondary); font-size: 0.92rem; }
+  .auth-form { display: flex; flex-direction: column; gap: 1.1rem; }
+
+  .password-strength {
+    height: 4px; border-radius: 99px;
+    background: var(--border); margin-top: 0.4rem; overflow: hidden;
+  }
+  .strength-bar {
+    height: 100%; border-radius: 99px;
+    transition: width 0.3s ease, background 0.3s ease;
+    width: 0%;
+  }
+  .strength-label { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem; }
+
+  .requirement {
+    display: flex; align-items: center; gap: 0.4rem;
+    font-size: 0.8rem; color: var(--text-muted); transition: color 0.2s;
+  }
+  .requirement.met { color: var(--success); }
+  .req-icon::before { content: '○'; }
+  .requirement.met .req-icon::before { content: '✓'; }
+
+  .auth-footer-link {
+    text-align: center; color: var(--text-secondary); font-size: 0.9rem; margin-top: 1.25rem;
+  }
+  .auth-footer-link a { color: var(--accent-light); text-decoration: none; font-weight: 600; }
+  .auth-footer-link a:hover { text-decoration: underline; }
+  @media (max-width: 640px) {
+    .auth-card { padding: 1.5rem; border-radius: 24px; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-page" id="auth-page">
+  <div class="auth-card">
+    <div class="auth-header">
+      <div class="auth-icon">✨</div>
+      <h1 class="auth-title">Create Account</h1>
+      <p class="auth-subtitle">Join TechVault – Discover amazing electronics</p>
+    </div>
+
+    <div id="alert-error" class="alert alert-error" style="margin-bottom:1rem;">
+      <span>⚠</span><span id="alert-msg"></span>
+    </div>
+    <div id="alert-success" class="alert alert-success" style="margin-bottom:1rem;">
+      <span>✓</span><span id="alert-ok-msg"></span>
+    </div>
+
+    <form class="auth-form" id="register-form" onsubmit="handleRegister(event)">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="full_name">Full Name</label>
+          <input class="form-input" type="text" id="full_name" name="full_name"
+                 placeholder="John Doe" required autocomplete="name" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="username">Username</label>
+          <input class="form-input" type="text" id="username" name="username"
+                 placeholder="johndoe99" required autocomplete="username" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="email">Email Address</label>
+        <input class="form-input" type="email" id="email" name="email"
+               placeholder="john@example.com" required autocomplete="email" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="password">Password</label>
+        <input class="form-input" type="password" id="password" name="password"
+               placeholder="Create a strong password" required autocomplete="new-password"
+               oninput="checkStrength(this.value)" />
+        <div class="password-strength"><div class="strength-bar" id="strength-bar"></div></div>
+        <span class="strength-label" id="strength-label">Enter a password</span>
+        <div style="display:flex; flex-direction:column; gap:0.25rem; margin-top:0.4rem;">
+          <div class="requirement" id="req-len"><span class="req-icon"></span> At least 8 characters</div>
+          <div class="requirement" id="req-upper"><span class="req-icon"></span> Uppercase letter</div>
+          <div class="requirement" id="req-num"><span class="req-icon"></span> Number</div>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-full btn-lg" id="submit-btn" style="margin-top:0.5rem;">
+        Create Account
+      </button>
+    </form>
+
+    <div class="auth-footer-link">
+      Already have an account? <a href="/customer/login/" id="login-link">Sign in →</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  function checkStrength(pw) {
+    const bar    = document.getElementById('strength-bar');
+    const label  = document.getElementById('strength-label');
+    const reqLen   = document.getElementById('req-len');
+    const reqUpper = document.getElementById('req-upper');
+    const reqNum   = document.getElementById('req-num');
+
+    const hasLen   = pw.length >= 8;
+    const hasUpper = /[A-Z]/.test(pw);
+    const hasNum   = /[0-9]/.test(pw);
+
+    reqLen.classList.toggle('met', hasLen);
+    reqUpper.classList.toggle('met', hasUpper);
+    reqNum.classList.toggle('met', hasNum);
+
+    const score = [hasLen, hasUpper, hasNum].filter(Boolean).length;
+    const widths = ['0%','33%','66%','100%'];
+    const colors = ['transparent','#ef4444','#f59e0b','#10b981'];
+    const labels = ['Enter a password','Weak','Fair','Strong ✓'];
+
+    bar.style.width    = widths[score];
+    bar.style.background = colors[score];
+    label.textContent  = labels[score];
+    label.style.color  = score === 3 ? 'var(--success)' : score === 2 ? 'var(--warning)' : 'var(--danger)';
+  }
+
+  async function handleRegister(e) {
+    e.preventDefault();
+    const btn = document.getElementById('submit-btn');
+    const errAlert = document.getElementById('alert-error');
+    const okAlert  = document.getElementById('alert-success');
+    const errMsg   = document.getElementById('alert-msg');
+    const okMsg    = document.getElementById('alert-ok-msg');
+
+    errAlert.classList.remove('visible');
+    okAlert.classList.remove('visible');
+
+    const full_name = document.getElementById('full_name').value.trim();
+    const username  = document.getElementById('username').value.trim();
+    const email     = document.getElementById('email').value.trim();
+    const password  = document.getElementById('password').value;
+
+    if (!full_name || !username || !email || !password) {
+      errMsg.textContent = 'Please fill in all fields.';
+      errAlert.classList.add('visible'); return;
+    }
+
+    btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Creating account…';
+
+    try {
+      const res = await fetch('/proxy/customer/customers/register/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ full_name, username, email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        errMsg.textContent = data.error || 'Registration failed. Please try again.';
+        errAlert.classList.add('visible');
+        btn.disabled = false; btn.innerHTML = 'Create Account';
+        return;
+      }
+      okMsg.textContent = `Account created! Redirecting to login…`;
+      okAlert.classList.add('visible');
+      setTimeout(() => location.href = '/customer/login/', 1200);
+    } catch(err) {
+      errMsg.textContent = 'Network error. Please check your connection.';
+      errAlert.classList.add('visible');
+      btn.disabled = false; btn.innerHTML = 'Create Account';
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    if (getToken()) location.href = '/customer/browse/';
+  });
+</script>
+{% endblock %}

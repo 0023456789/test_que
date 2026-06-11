@@ -1,0 +1,309 @@
+{% extends "app/base.html" %}
+{% block title %}Checkout – TechVault{% endblock %}
+{% block meta_description %}Complete your TechVault purchase securely. Enter your shipping details and place your order.{% endblock %}
+
+{% block extra_head %}
+<style>
+  .checkout-page { max-width: 1120px; margin: 0 auto; padding: 3rem 2rem 2rem; }
+  .checkout-layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 1.5rem; align-items: start; }
+  .checkout-card {
+    border-radius: 24px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.88);
+    box-shadow: var(--shadow-soft);
+    padding: 1.45rem;
+  }
+  .checkout-section-title {
+    margin: 0 0 1rem;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.02rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+  }
+  .payment-icons { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+  .payment-icon {
+    padding: 0.4rem 0.75rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: rgba(15,23,42,0.04);
+    color: var(--text-soft);
+    font-size: 0.8rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+  }
+  .order-item {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.85rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .order-item:last-of-type { border-bottom: none; }
+  .order-item-icon {
+    width: 46px; height: 46px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 16px;
+    background: linear-gradient(135deg, rgba(15,98,254,0.12), rgba(245,158,11,0.12));
+    font-size: 1.35rem;
+  }
+  .order-item-name { font-size: 0.95rem; font-weight: 800; }
+  .order-item-meta { font-size: 0.8rem; color: var(--text-muted); }
+  .order-item-price { margin-left: auto; font-weight: 900; font-size: 0.95rem; color: var(--text); }
+  .checkout-summary {
+    position: sticky; top: calc(var(--nav-height) + 1rem);
+    padding: 1.35rem;
+    border-radius: 24px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.88);
+    box-shadow: var(--shadow-soft);
+  }
+  .summary-title { margin: 0 0 1rem; font-family: 'Space Grotesk', sans-serif; font-size: 1.04rem; font-weight: 700; }
+  .summary-row { display: flex; justify-content: space-between; padding: 0.5rem 0; font-size: 0.93rem; }
+  .summary-row .label { color: var(--text-muted); }
+  .summary-row.total { margin-top: 0.55rem; padding-top: 0.95rem; border-top: 1px solid var(--border); font-weight: 900; font-size: 1.08rem; }
+  .summary-row.total .amount { color: var(--text); }
+  #success-overlay {
+    position: fixed; inset: 0; z-index: 9000;
+    background: rgba(8,13,26,0.58);
+    backdrop-filter: blur(16px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+  #success-overlay.show { display: flex; }
+  .success-card {
+    width: min(440px, calc(100vw - 2rem));
+    padding: 2.6rem 2rem;
+    border-radius: 28px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.94);
+    box-shadow: var(--shadow);
+    text-align: center;
+  }
+  .success-icon { font-size: 4rem; margin-bottom: 1rem; }
+  .success-title { margin: 0 0 0.4rem; font-family: 'Space Grotesk', sans-serif; font-size: 1.8rem; color: var(--success); }
+  .success-sub { color: var(--text-soft); margin-bottom: 1.25rem; }
+  .steps { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
+  .step-item {
+    flex: 1;
+    padding: 0.55rem 0.6rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.7);
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    font-weight: 800;
+  }
+  .step-item.active { border-color: rgba(15,98,254,0.18); background: var(--accent-soft); color: var(--accent-strong); }
+  @media (max-width: 850px) {
+    .checkout-layout { grid-template-columns: 1fr; }
+    .checkout-summary { position: static; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="checkout-page">
+  <!-- Auth guard -->
+  <div id="auth-prompt" class="hidden" style="
+    display:flex; flex-direction:column; align-items:center;
+    padding:5rem 2rem; text-align:center; gap:1rem; color:var(--text-secondary);">
+    <div style="font-size:3.5rem;">🔐</div>
+    <h2 style="color:var(--text-primary)">Sign In Required</h2>
+    <a href="/customer/login/" class="btn btn-primary" id="sign-in-link">Sign In</a>
+  </div>
+
+  <div id="checkout-content" class="hidden">
+    <div style="margin-bottom:2rem;">
+      <h1 class="page-title">Checkout</h1>
+      <p class="page-subtitle">You're almost there! Complete your order.</p>
+    </div>
+
+    <!-- Steps indicator -->
+    <div class="steps" style="max-width:400px; margin-bottom:2rem;">
+      <div class="step-item active">1. Cart</div>
+      <div class="step-item active">2. Shipping</div>
+      <div class="step-item">3. Confirm</div>
+    </div>
+
+    <div class="checkout-layout">
+      <!-- Left: form -->
+      <div style="display:flex; flex-direction:column; gap:1.5rem;">
+
+        <!-- Shipping address -->
+        <div class="checkout-card">
+          <h2 class="checkout-section-title">📦 Shipping Address</h2>
+          <div id="msg-area" style="margin-bottom:1rem;"></div>
+          <div style="display:flex; flex-direction:column; gap:1rem;">
+            <div class="form-group">
+              <label class="form-label" for="recipient">Recipient Name</label>
+              <input class="form-input" type="text" id="recipient" placeholder="Full name" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="street">Street Address</label>
+              <input class="form-input" type="text" id="street" placeholder="123 Main St, Apt 4B" />
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="city">City</label>
+                <input class="form-input" type="text" id="city" placeholder="Hanoi" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="zip">ZIP / Postal Code</label>
+                <input class="form-input" type="text" id="zip" placeholder="100000" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="country">Country</label>
+              <input class="form-input" type="text" id="country" placeholder="Vietnam" value="Vietnam" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Payment (mock) -->
+        <div class="checkout-card">
+          <h2 class="checkout-section-title">💳 Payment Method</h2>
+          <div class="payment-icons">
+            <span class="payment-icon">VISA</span>
+            <span class="payment-icon">MC</span>
+            <span class="payment-icon">COD</span>
+          </div>
+          <div style="background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.2); border-radius:var(--radius-sm); padding:1rem; font-size:0.88rem; color:#34d399;">
+            🏦 Cash on Delivery (COD) is selected. Payment will be collected upon delivery.
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Right: summary -->
+      <aside class="checkout-summary">
+        <p class="summary-title">Your Order</p>
+
+        <div id="order-items-list">
+          <div style="color:var(--text-muted);font-size:0.88rem;">Loading items…</div>
+        </div>
+
+        <hr class="divider" />
+
+        <div class="summary-row"><span class="label">Subtotal</span><span id="sum-subtotal">–</span></div>
+        <div class="summary-row"><span class="label">Shipping</span><span style="color:var(--success)">Free</span></div>
+        <div class="summary-row total"><span>Total</span><span class="amount" id="sum-total">–</span></div>
+
+        <button class="btn btn-success btn-full btn-lg" style="margin-top:1.5rem;" 
+                onclick="placeOrder()" id="place-order-btn">
+          Place Order 🎉
+        </button>
+
+        <p style="text-align:center; font-size:0.78rem; color:var(--text-muted); margin-top:0.75rem;">
+          🔒 Secure & encrypted checkout
+        </p>
+      </aside>
+    </div>
+  </div>
+</div>
+
+<!-- Success overlay -->
+<div id="success-overlay">
+  <div class="success-card">
+    <div class="success-icon">🎉</div>
+    <h2 class="success-title">Order Placed!</h2>
+    <p class="success-sub">Thank you for your purchase. Your order is being processed and will be delivered soon.</p>
+    <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:1.5rem;">Order ID: <strong id="success-order-id" style="color:var(--accent-light);">–</strong></p>
+    <a href="/customer/browse/" class="btn btn-primary btn-full" id="continue-shopping-btn">Continue Shopping →</a>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  let cartItems = [];
+  let cartTotal = 0;
+
+  function fmt(p) { return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(p); }
+
+  function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  function showMsg(msg, isError) {
+    const a = document.getElementById('msg-area');
+    a.innerHTML = `<div class="alert ${isError?'alert-error':'alert-success'} visible">
+      <span>${isError?'⚠':'✓'}</span><span>${escHtml(msg)}</span></div>`;
+  }
+
+  async function loadCart() {
+    const token = getToken();
+    if (!token) { document.getElementById('auth-prompt').style.display='flex'; return; }
+    document.getElementById('checkout-content').classList.remove('hidden');
+
+    try {
+      const res = await fetch('/proxy/customer/cart/current/', {
+        headers: { 'X-Customer-Token': token }
+      });
+      if (res.status === 401) { location.href = '/customer/login/'; return; }
+      const data = await res.json();
+      if (!data.cart || data.cart.items.length === 0) {
+        location.href = '/customer/cart/'; return;
+      }
+      cartItems = data.cart.items;
+      cartTotal = data.cart.total_amount;
+      renderOrderItems();
+    } catch(e) {
+      showMsg('Failed to load cart.', true);
+    }
+  }
+
+  function renderOrderItems() {
+    const list = document.getElementById('order-items-list');
+    list.innerHTML = cartItems.map(item => `
+      <div class="order-item">
+        <div class="order-item-icon">${item.item_type==='computer'?'💻':'📱'}</div>
+        <div>
+          <p class="order-item-name">${escHtml(item.item_name)}</p>
+          <p class="order-item-meta">Qty: ${item.quantity} × ${fmt(item.unit_price)}</p>
+        </div>
+        <span class="order-item-price">${fmt(item.line_total)}</span>
+      </div>
+    `).join('');
+    document.getElementById('sum-subtotal').textContent = fmt(cartTotal);
+    document.getElementById('sum-total').textContent    = fmt(cartTotal);
+  }
+
+  async function placeOrder() {
+    const recipient = document.getElementById('recipient').value.trim();
+    const street    = document.getElementById('street').value.trim();
+    const city      = document.getElementById('city').value.trim();
+    const zip       = document.getElementById('zip').value.trim();
+    const country   = document.getElementById('country').value.trim();
+
+    if (!recipient || !street || !city) {
+      showMsg('Please fill in all required shipping fields.', true); return;
+    }
+
+    const shipping_address = `${recipient}, ${street}, ${city} ${zip}, ${country}`;
+    const btn = document.getElementById('place-order-btn');
+    btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Placing order…';
+
+    try {
+      const res = await fetch('/proxy/customer/orders/purchase/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Customer-Token': getToken() },
+        body: JSON.stringify({ shipping_address }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showMsg(data.error || 'Order failed. Please try again.', true);
+        btn.disabled = false; btn.innerHTML = 'Place Order 🎉'; return;
+      }
+      document.getElementById('success-order-id').textContent = '#' + data.order.id;
+      document.getElementById('success-overlay').classList.add('show');
+    } catch(e) {
+      showMsg('Network error. Please try again.', true);
+      btn.disabled = false; btn.innerHTML = 'Place Order 🎉';
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', loadCart);
+</script>
+{% endblock %}

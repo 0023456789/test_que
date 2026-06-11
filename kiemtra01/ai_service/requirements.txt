@@ -1,0 +1,23 @@
+fastapi==0.111.0
+uvicorn[standard]==0.29.0
+
+# Embedding - small model only
+sentence-transformers==2.7.0
+
+# Vector DB - lightweight
+faiss-cpu==1.8.0
+
+# Graph DB client
+neo4j==5.20.0
+
+# HTTP client for Ollama
+httpx==0.27.0
+
+# Serialization
+pydantic==2.7.1
+
+# Caching
+cachetools==5.3.3
+
+# Numpy (required by faiss & sentence-transformers)
+numpy==1.26.4

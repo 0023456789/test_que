@@ -1,0 +1,153 @@
+{% extends "app/base.html" %}
+{% block title %}Sign In – TechVault{% endblock %}
+{% block meta_description %}Sign in to your TechVault account to access your cart, orders, and personalized recommendations.{% endblock %}
+
+{% block extra_head %}
+<style>
+  .auth-page {
+    min-height: calc(100vh - var(--nav-height));
+    display: flex; align-items: center; justify-content: center;
+    padding: 4rem 1.5rem 3rem;
+  }
+  .auth-card {
+    width: 100%; max-width: 460px;
+    background: rgba(255,255,255,0.9);
+    border: 1px solid var(--border);
+    border-radius: 30px;
+    padding: 2.2rem;
+    backdrop-filter: blur(18px);
+    box-shadow: var(--shadow);
+  }
+  .auth-header { text-align: center; margin-bottom: 2rem; }
+  .auth-icon {
+    width: 60px; height: 60px;
+    background: linear-gradient(135deg, #0f62fe, #7c3aed);
+    border-radius: 18px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.6rem; margin: 0 auto 1.2rem;
+    box-shadow: 0 14px 24px rgba(15,98,254,0.18);
+  }
+  .auth-title { font-family: 'Space Grotesk', sans-serif; font-size: 1.8rem; font-weight: 700; margin-bottom: 0.35rem; }
+  .auth-subtitle { color: var(--text-secondary); font-size: 0.92rem; }
+
+  .auth-form { display: flex; flex-direction: column; gap: 1.1rem; }
+  .auth-form .form-label { font-size: 0.88rem; }
+  .auth-form .form-input { padding: 0.88rem 1rem; border-radius: 16px; }
+
+  .auth-footer-link {
+    text-align: center; margin-top: 1.25rem;
+    color: var(--text-secondary); font-size: 0.9rem;
+  }
+  .auth-footer-link a { color: var(--accent-light); text-decoration: none; font-weight: 600; }
+  .auth-footer-link a:hover { text-decoration: underline; }
+
+  .divider-text {
+    display: flex; align-items: center; gap: 0.75rem;
+    color: var(--text-muted); font-size: 0.82rem; margin: 0.5rem 0;
+  }
+  .divider-text::before, .divider-text::after {
+    content: ''; flex: 1; border-top: 1px solid var(--border);
+  }
+  @media (max-width: 640px) {
+    .auth-card { padding: 1.5rem; border-radius: 24px; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-page" id="auth-page">
+  <div class="auth-card">
+    <div class="auth-header">
+      <div class="auth-icon">🔐</div>
+      <h1 class="auth-title">Welcome Back</h1>
+      <p class="auth-subtitle">Sign in to your TechVault account</p>
+    </div>
+
+    <div id="alert-error" class="alert alert-error" style="margin-bottom:1rem;">
+      <span>⚠</span><span id="alert-msg"></span>
+    </div>
+    <div id="alert-success" class="alert alert-success" style="margin-bottom:1rem;">
+      <span>✓</span><span id="alert-ok-msg"></span>
+    </div>
+
+    <form class="auth-form" id="login-form" onsubmit="handleLogin(event)">
+      <div class="form-group">
+        <label class="form-label" for="username">Username</label>
+        <input class="form-input" type="text" id="username" name="username"
+               placeholder="Enter your username" required autocomplete="username" />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="password">Password</label>
+        <input class="form-input" type="password" id="password" name="password"
+               placeholder="Enter your password" required autocomplete="current-password" />
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-full btn-lg" id="submit-btn" style="margin-top:0.5rem;">
+        Sign In
+      </button>
+    </form>
+
+    <div class="divider-text" style="margin-top:1.5rem;">or</div>
+
+    <div class="auth-footer-link" style="margin-top:0;">
+      Don't have an account? <a href="/customer/register/" id="register-link">Create one →</a>
+    </div>
+
+    <hr class="divider" style="margin-top:1.5rem;" />
+
+    <div class="auth-footer-link" style="color:var(--text-muted); font-size:0.82rem;">
+      Staff member? <a href="/staff/login/" id="staff-link">Staff login →</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  async function handleLogin(e) {
+    e.preventDefault();
+    const btn = document.getElementById('submit-btn');
+    const errAlert  = document.getElementById('alert-error');
+    const okAlert   = document.getElementById('alert-success');
+    const errMsg    = document.getElementById('alert-msg');
+    const okMsg     = document.getElementById('alert-ok-msg');
+
+    errAlert.classList.remove('visible');
+    okAlert.classList.remove('visible');
+
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Signing in…';
+
+    try {
+      const res = await fetch('/proxy/customer/customers/login/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        errMsg.textContent = data.error || 'Invalid credentials. Please try again.';
+        errAlert.classList.add('visible');
+        btn.disabled = false; btn.innerHTML = 'Sign In';
+        return;
+      }
+      setAuth(data.token, data.customer);
+      okMsg.textContent = `Welcome back, ${data.customer.full_name || data.customer.username}! Redirecting…`;
+      okAlert.classList.add('visible');
+      setTimeout(() => location.href = '/customer/browse/', 900);
+    } catch(err) {
+      errMsg.textContent = 'Network error. Please check your connection.';
+      errAlert.classList.add('visible');
+      btn.disabled = false; btn.innerHTML = 'Sign In';
+    }
+  }
+
+  // Redirect if already logged in
+  document.addEventListener('DOMContentLoaded', () => {
+    if (getToken()) location.href = '/customer/browse/';
+  });
+</script>
+{% endblock %}
